@@ -11,11 +11,11 @@ This program is in an __extremely__ early stage. Here's a list of tasks that nee
 - [ ] boots Linux from ISO
 - [ ] boot option customization, troubleshooting, etc
 
-Now, with that out the way (_phew!_), let's get to the interesting stuff, shall we?
+Now, with that out the way (phew!), let's get to the interesting stuff, shall we?
 
 ### LICENSE ###
 
-This thing is currently under the Lesser GPL, version 2. It may some day upgrade to the full GPL, but for now, the LGPL serves our purposes well. Why is it under the LGPL? Well, out of the goodness of my heart, of course! (And Enterprise steals -- read, borrows -- code from gummiboot, which is under the LGPL.
+This thing is currently under the Lesser GPL, version 2. It may some day upgrade to the full GPL, but for now, the LGPL serves our purposes well. Why is it under the LGPL? Well, out of the goodness of my heart, of course! (And Enterprise steals -- read, borrows -- code from gummiboot, which is under the LGPL.)
 
 ### CODING STYLE ###
 

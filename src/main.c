@@ -21,6 +21,7 @@
 
 static EFI_STATUS console_text_mode(VOID);
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content);
+static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name);
 
 UINTN x_max = 80;
 UINTN y_max = 25;
@@ -31,7 +32,7 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
     EFI_STATUS err; // Define an error variable.
     EFI_FILE *root_dir;
     EFI_LOADED_IMAGE *loaded_image;
-    CHAR8 *content = NULL;
+    //CHAR8 *content = NULL;
     
     InitializeLib(image_handle, systab); // Initialize EFI.
     
@@ -45,7 +46,7 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
     if (EFI_ERROR(err)) {
         Print(L"Error getting a LoadedImageProtocol handle: %r ", err);
         uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
-        return err;
+        return EFI_LOAD_ERROR;
     }
     
     root_dir = LibOpenRoot(loaded_image->DeviceHandle);
@@ -64,7 +65,7 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
         x_max = 80;
         y_max = 25;
         
-        return EFI_SUCCESS;
+        return EFI_LOAD_ERROR;
     }
     
     console_text_mode(); // Set the console to text mode.
@@ -80,15 +81,14 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
      * Here we check if the ISO file we're going to boot (boot.iso) is present. If not, we
      * bail, as there is no reason to continue.
      */
-    UINTN len = file_read(root_dir, L"\\boot.iso", &content);
-    if (len == 0) { // Either ISO has 0 length or the file doesn't exist (more probable).
+    if (!file_exists(root_dir, L"\\boot.iso")) { // ISO file doesn't exist.
         Print(L"\nNo ISO file found with name boot.iso. Aborting!\n");
         uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor.
         uefi_call_wrapper(BS->Stall, 1, 3000);
         
         BS->Exit(image_handle, err, sizeof err, NULL); // Quit!
         
-        return err;
+        return EFI_SUCCESS; // Should never get here.
     } else {
         Print(L" done!\n");
         
@@ -144,6 +144,23 @@ static EFI_STATUS console_text_mode(VOID) {
     return uefi_call_wrapper(ConsoleControl->SetMode, 2, ConsoleControl, EfiConsoleControlScreenText);
 }
 
+static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name) {
+    EFI_FILE_HANDLE handle;
+    EFI_FILE_INFO *info;
+    EFI_STATUS err;
+    
+    err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, 0ULL);
+    if (EFI_ERROR(err)) { // If we can't open the file, i.e it doesn't exist.
+        goto out;
+    }
+    
+    FreePool(info);
+    uefi_call_wrapper(handle->Close, 1, handle);
+    return TRUE;
+out:
+    return FALSE;
+}
+
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content) {
     EFI_FILE_HANDLE handle;
     EFI_FILE_INFO *info;
@@ -162,7 +179,7 @@ static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content)
     buf = AllocatePool(buflen);
     
     err = uefi_call_wrapper(handle->Read, 3, handle, &buflen, buf);
-    if (EFI_ERROR(err) == EFI_SUCCESS) {
+    if (EFI_ERROR(err) == EFI_SUCCESS) { // If read completed successfully..
         buf[buflen] = '\0';
         *content = buf;
         len = buflen;
