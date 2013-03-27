@@ -1,6 +1,6 @@
 /*
- * Tool intended to help falicitate the process of booting Linux on Intel
- * Macintosh computers made by Apple from a USB stick or similiar.
+ * Tool intended to help facilitate the process of booting Linux on Intel Macintosh computers made by Apple from a USB 
+ * stick or similar.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by
