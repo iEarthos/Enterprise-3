@@ -19,13 +19,35 @@
 #include <efi.h>
 #include <efilib.h>
 
+#include "main.h"
+#define banner L"Welcome to Enterprise! - Version %d.%d\n"
+
+#define VERSION_MAJOR 0
+#define VERSION_MINOR 1
+
 static EFI_STATUS console_text_mode(VOID);
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content);
 static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name);
 
+EFI_STATUS load_image(EFI_HANDLE handle, CHAR16 *name, char *cmdline);
+
+struct loader {
+	EFI_STATUS (*load)(EFI_HANDLE, CHAR16 *, char *);
+};
+
+extern struct loader *loaders[];
+
 UINTN x_max = 80;
 UINTN y_max = 25;
 
+extern struct loader bzimage_loader;
+
+struct loader *loaders[] = {
+	&bzimage_loader,
+	NULL,
+};
+
+/* entry function for EFI */
 EFI_STATUS
 efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
 {
@@ -74,7 +96,7 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Text color.
     uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
     
-    Print(L"Welcome to Enterprise!\n");
+    Print(banner, VERSION_MAJOR, VERSION_MINOR);
     Print(L"Searching for distribution ISO file...");
     
     /*
@@ -84,7 +106,7 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
     if (!file_exists(root_dir, L"\\boot.iso")) { // ISO file doesn't exist.
         Print(L"\nNo ISO file found with name boot.iso. Aborting!\n");
         uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor.
-        uefi_call_wrapper(BS->Stall, 1, 3000);
+        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
         
         BS->Exit(image_handle, err, sizeof err, NULL); // Quit!
         
@@ -93,6 +115,18 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
         Print(L" done!\n");
         
         // Start boot procedure.
+        Print(L"Starting boot process now...\n");
+        err = load_image(image_handle, L"hanoi.efi", "hello world") != EFI_SUCCESS;
+        if (err != EFI_SUCCESS) {
+            Print(L"Couldn't load boot loader! Aborting!\n");
+            
+            uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor.
+            uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+            
+            BS->Exit(image_handle, err, sizeof err, NULL); // Quit!
+            
+            return err; // Should never get here.
+        }
     }
     
     return EFI_SUCCESS;
@@ -139,11 +173,17 @@ static EFI_STATUS console_text_mode(VOID) {
     EFI_STATUS err;
     
     err = LibLocateProtocol(&ConsoleControlProtocolGuid, (VOID **)&ConsoleControl);
-    if (EFI_ERROR(err))
+    if (EFI_ERROR(err)) {
         return err;
+    }
+    
     return uefi_call_wrapper(ConsoleControl->SetMode, 2, ConsoleControl, EfiConsoleControlScreenText);
 }
 
+/* See if we can open a file. If we can, than it exists. 
+ * @dir = directory
+ * @name = filename
+ */
 static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name) {
     EFI_FILE_HANDLE handle;
     EFI_FILE_INFO *info;
@@ -161,6 +201,7 @@ out:
     return FALSE;
 }
 
+/* Open a file and copy its contents into @content. */
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content) {
     EFI_FILE_HANDLE handle;
     EFI_FILE_INFO *info;
@@ -191,4 +232,22 @@ static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content)
     uefi_call_wrapper(handle->Close, 1, handle);
 out:
     return len;
+}
+
+/* This is from efilinux. */
+EFI_STATUS
+load_image(EFI_HANDLE handle, CHAR16 *name, char *cmdline)
+{
+	struct loader **loader;
+	EFI_STATUS err;
+    
+	err = EFI_UNSUPPORTED;
+	for (loader = loaders; *loader != NULL; loader++) {
+		err = (*loader)->load(handle, name, cmdline);
+		if (err == EFI_SUCCESS) {
+			break;
+        }
+	}
+    
+	return err;
 }

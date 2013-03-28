@@ -4,7 +4,7 @@ HDRROOT  = $(EFIROOT)/include/efi
 INCLUDES = -I. -I$(HDRROOT) -I$(HDRROOT)/$(ARCH) -I$(HDRROOT)/protocol
 
 CRTOBJS  = $(EFIROOT)/lib/crt0-efi-$(ARCH).o
-CFLAGS   = -O2 -fpic -Wall -fshort-wchar -fno-strict-aliasing \
+CFLAGS   = -O2 -fpic -fshort-wchar -fno-strict-aliasing \
            -fno-merge-constants
 CPPFLAGS = -DCONFIG_$(ARCH)
 FORMAT   = efi-app-$(ARCH)
