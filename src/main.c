@@ -25,27 +25,43 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
+typedef struct {
+    CHAR16 *file;
+    CHAR16 *title_show;
+    CHAR16 *title;
+    CHAR16 *version;
+    CHAR16 *machine_id;
+    EFI_HANDLE *device;
+//    enum loader_type type;
+    CHAR16 *loader;
+    CHAR16 *options;
+    EFI_STATUS (*call)(void);
+    BOOLEAN no_autoselect;
+    BOOLEAN non_unique;
+} ConfigEntry;
+
+typedef struct {
+    ConfigEntry **entries;
+    UINTN entry_count;
+    INTN idx_default;
+    INTN idx_default_efivar;
+    UINTN timeout_sec;
+    UINTN timeout_sec_config;
+    INTN timeout_sec_efivar;
+    CHAR16 *entry_default_pattern;
+    CHAR16 *entry_oneshot;
+    CHAR16 *options_edit;
+    CHAR16 *entries_auto;
+} Config;
+
 static EFI_STATUS console_text_mode(VOID);
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content);
 static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name);
 
-EFI_STATUS load_image(EFI_HANDLE handle, CHAR16 *name, char *cmdline);
-
-struct loader {
-	EFI_STATUS (*load)(EFI_HANDLE, CHAR16 *, char *);
-};
-
-extern struct loader *loaders[];
+EFI_STATUS load_image(EFI_HANDLE parent_image, const Config *config, const ConfigEntry *entry);
 
 UINTN x_max = 80;
 UINTN y_max = 25;
-
-extern struct loader bzimage_loader;
-
-struct loader *loaders[] = {
-	&bzimage_loader,
-	NULL,
-};
 
 /* entry function for EFI */
 EFI_STATUS
@@ -114,9 +130,18 @@ efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
     } else {
         Print(L" done!\n");
         
+        err = EFI_SUCCESS; // Reset error status code.
+        
+        ConfigEntry* entry;
+        entry->device = root_dir;
+        entry->loader = L"hanoi.efi"; // Name of program to run?
+        
+        Config* config;
+        //config->entries = entry;
+        
         // Start boot procedure.
         Print(L"Starting boot process now...\n");
-        err = load_image(image_handle, L"hanoi.efi", "hello world") != EFI_SUCCESS;
+        err = load_image(image_handle, config, entry) != EFI_SUCCESS; // Test by trying to run a sample EFI program I have.
         if (err != EFI_SUCCESS) {
             Print(L"Couldn't load boot loader! Aborting!\n");
             
@@ -234,20 +259,53 @@ out:
     return len;
 }
 
-/* This is from efilinux. */
-EFI_STATUS
-load_image(EFI_HANDLE handle, CHAR16 *name, char *cmdline)
-{
-	struct loader **loader;
+/* This is from gummiboot. */
+EFI_STATUS load_image(EFI_HANDLE parent_image, const Config *config, const ConfigEntry *entry) {
 	EFI_STATUS err;
+    EFI_HANDLE image;
+    EFI_DEVICE_PATH *path;
+    CHAR16 *options;
     
-	err = EFI_UNSUPPORTED;
-	for (loader = loaders; *loader != NULL; loader++) {
-		err = (*loader)->load(handle, name, cmdline);
-		if (err == EFI_SUCCESS) {
-			break;
+    path = FileDevicePath(entry->device, entry->loader);
+    if (!path) {
+        Print(L"Error getting device path.\n");
+        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+        return EFI_INVALID_PARAMETER;
+    }
+    
+    err = uefi_call_wrapper(BS->LoadImage, 6, FALSE, parent_image, path, NULL, 0, &image);
+    if (EFI_ERROR(err)) {
+        Print(L"Error loading %s: %r\n", entry->loader, err);
+        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+        goto out;
+    }
+    
+    if (config->options_edit) {
+        options = config->options_edit;
+    } else if (entry->options) {
+        options = entry->options;
+    } else {
+        options = NULL;
+    }
+    
+    if (options) {
+        EFI_LOADED_IMAGE *loaded_image;
+        
+        err = uefi_call_wrapper(BS->OpenProtocol, 6, image, &LoadedImageProtocol, &loaded_image,
+                                parent_image, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
+        if (EFI_ERROR(err)) {
+            Print(L"Error getting LoadedImageProtocol handle: %r\n", err);
+            uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+            goto out_unload;
         }
-	}
+        loaded_image->LoadOptions = options;
+        loaded_image->LoadOptionsSize = (StrLen(loaded_image->LoadOptions)+1) * sizeof(CHAR16);
+    }
     
-	return err;
+    err = uefi_call_wrapper(BS->StartImage, 3, image, NULL, NULL);
+out_unload:
+    uefi_call_wrapper(BS->UnloadImage, 1, image);
+out:
+    FreePool(path);
+    return err;
 }
