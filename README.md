@@ -1,12 +1,14 @@
 Enterprise
 ==========
 
-This is a tool intended to help facilitate the process of booting Linux on Intel Macintosh computers made by Apple from a USB stick or similar. It is written in C, using gnu-efi, and is currently compiling for 32-bit (64-bit support is coming very soon!). It is _not_ stable, and should really _not_ be used, except for testing with VirtualBox or QEMU, of course. :)
+This is a tool intended to help facilitate the process of booting Linux on Intel Macintosh computers made by Apple from a USB stick or similar. It is designed for [Mac Linux USB Loader](https://github.com/SevenBits/Mac-Linux-USB-Loader). It is written in C, using gnu-efi, and is currently running on 32-bit EFIs in VirtualBox (64-bit support is coming very soon!). It is _not_ stable, and should really _not_ be used, except for testing with VirtualBox or QEMU, of course. :) It can be compiled on both Linux and OS X computers, however, on OS X you will need a cross compiler as Apple's GCC cannot compile EFI binaries. I am currently using [these instructions](http://osxbook.com/book/bonus/chapter4/efiprogramming/) to produce a working EFI environment (though those tools are a _bit_ old and only compile for 32 bit - I plan on updating the toolchain).
+
+Currently, I'm using a GRUB for EFI image to boot Linux from within an ISO file, however, that technique is not as perfect as I'd like. So, Enterprise will slowly usurp the role of GRUB in booting Linux for [Mac Linux USB Loader](https://github.com/SevenBits/Mac-Linux-USB-Loader) and this will hopefully give me additional control in the booting process.
 
 This program is in an __extremely__ early stage. Here's a list of tasks that need to be done:
 
-- [x] detects ISO file (named boot.iso)
-- [ ] detects system configuration (firmware version, etc)
+- [x] detect ISO file (named boot.iso)
+- [ ] detect system configuration (firmware version, etc)
 - [ ] integration with [Mac Linux USB Loader](https://github.com/SevenBits/Mac-Linux-USB-Loader)
 - [ ] boots Linux from ISO
 - [ ] boot option customization, troubleshooting, etc
