@@ -1,4 +1,4 @@
-ARCH     = ia32
+ARCH     = $(shell uname -m | sed s,i[3456789]86,ia32,)
 EFIROOT  = /usr/local
 HDRROOT  = $(EFIROOT)/include/efi
 INCLUDES = -I. -I$(HDRROOT) -I$(HDRROOT)/$(ARCH) -I$(HDRROOT)/protocol
