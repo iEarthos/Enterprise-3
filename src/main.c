@@ -64,9 +64,7 @@ UINTN x_max = 80;
 UINTN y_max = 25;
 
 /* entry function for EFI */
-EFI_STATUS
-efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab)
-{
+EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     EFI_STATUS err; // Define an error variable.
     EFI_FILE *root_dir;
     EFI_LOADED_IMAGE *loaded_image;
