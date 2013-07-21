@@ -16,7 +16,7 @@ LOADLIBS = -lefi -lgnuefi $(shell $(CC) -print-libgcc-file-name)
 
 # Toolchain prefix
 #
-prefix      = i686-osxbook-linux-gnu-
+prefix      = 
 CC          = $(prefix)gcc
 AS          = $(prefix)as
 LD          = $(prefix)ld

@@ -16,3 +16,7 @@
 *.out
 *.app
 *.efi
+
+# Junk files
+.DS_Store
+Thumbs.db

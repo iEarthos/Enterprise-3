@@ -25,6 +25,10 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
+#define DEFAULT_LOADER L"\\grub.efi"
+#define FALLBACK L"\\fallback.efi"
+#define MOK_MANAGER L"\\MokManager.efi"
+
 typedef struct {
     CHAR16 *file;
     CHAR16 *title_show;
@@ -54,11 +58,16 @@ typedef struct {
     CHAR16 *entries_auto;
 } Config;
 
+static CHAR16 *second_stage;
+static void *load_options;
+static UINT32 load_options_size;
+
 static EFI_STATUS console_text_mode(VOID);
 static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content);
 static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name);
 
-EFI_STATUS load_image(EFI_HANDLE parent_image, const Config *config, const ConfigEntry *entry);
+EFI_STATUS set_second_stage(EFI_HANDLE image_handle);
+EFI_STATUS init_grub(EFI_HANDLE image_handle);
 
 UINTN x_max = 80;
 UINTN y_max = 25;
@@ -71,6 +80,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     //CHAR8 *content = NULL;
     
     InitializeLib(image_handle, systab); // Initialize EFI.
+    set_second_stage(image_handle); // Setup the second stage loader.
     
     // Set the colors for the display and clear the display.
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
@@ -153,6 +163,82 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     }
     
     return EFI_SUCCESS;
+}
+
+/*
+* Check the load options to specify the second stage loader
+*/
+EFI_STATUS set_second_stage (EFI_HANDLE image_handle)
+{
+    EFI_STATUS status;
+    EFI_LOADED_IMAGE *li;
+    CHAR16 *start = NULL, *c;
+    int i, remaining_size = 0;
+    CHAR16 *loader_str = NULL;
+    int loader_len = 0;
+    
+    second_stage = DEFAULT_LOADER;
+    load_options = NULL;
+    load_options_size = 0;
+    
+    status = uefi_call_wrapper(BS->HandleProtocol, 3, image_handle, &LoadedImageProtocol, (void **) &li);
+    if (status != EFI_SUCCESS) {
+        Print (L"Failed to get load options\n");
+        return status;
+    }
+
+    /* Expect a CHAR16 string with at least one CHAR16 */
+    if (li->LoadOptionsSize < 4 || li->LoadOptionsSize % 2 != 0) {
+        return EFI_BAD_BUFFER_SIZE;
+    }
+    c = (CHAR16 *)(li->LoadOptions + (li->LoadOptionsSize - 2));
+    if (*c != L'\0') {
+        return EFI_BAD_BUFFER_SIZE;
+    }
+
+    /*UEFI shell copies the whole line of the command into LoadOptions.
+    * We ignore the string before the first L' ', i.e. the name of this
+    * program.
+    */
+    for (i = 0; i < li->LoadOptionsSize; i += 2) {
+        c = (CHAR16 *)(li->LoadOptions + i);
+        if (*c == L' ') {
+            *c = L'\0';
+            start = c + 1;
+            remaining_size = li->LoadOptionsSize - i - 2;
+            break;
+        }
+    }
+
+    if (!start || remaining_size <= 0)
+        return EFI_SUCCESS;
+
+    for (i = 0; start[i] != '\0'; i++) {
+        if (start[i] == L' ' || start[i] == L'\0')
+            break;
+        loader_len++;
+    }
+
+    /*
+    * Setup the name of the alternative loader and the LoadOptions for
+    * the loader
+    */
+    if (loader_len > 0) {
+        loader_str = AllocatePool((loader_len + 1) * sizeof(CHAR16));
+        if (!loader_str) {
+            Print(L"Failed to allocate loader string\n");
+            return EFI_OUT_OF_RESOURCES;
+        }
+        for (i = 0; i < loader_len; i++)
+            loader_str[i] = start[i];
+        
+        loader_str[loader_len] = L'\0';
+        second_stage = loader_str;
+        load_options = start;
+        load_options_size = remaining_size;
+    }
+
+return EFI_SUCCESS;
 }
 
 /* Stolen (er.. borrowed) from gummiboot */
@@ -251,59 +337,22 @@ static UINTN file_read(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content)
         FreePool(buf);
     }
     
+    
     FreePool(info);
     uefi_call_wrapper(handle->Close, 1, handle);
 out:
     return len;
 }
 
-/* This is from gummiboot. */
-EFI_STATUS load_image(EFI_HANDLE parent_image, const Config *config, const ConfigEntry *entry) {
-	EFI_STATUS err;
-    EFI_HANDLE image;
-    EFI_DEVICE_PATH *path;
-    CHAR16 *options;
+EFI_STATUS init_grub(EFI_HANDLE image_handle) {
+    EFI_STATUS efi_status;
+
     
-    path = FileDevicePath(entry->device, entry->loader);
-    if (!path) {
-        Print(L"Error getting device path.\n");
-        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
-        return EFI_INVALID_PARAMETER;
+    efi_status = start_image(image_handle, second_stage);
+
+    if (efi_status != EFI_SUCCESS) {
+        Print(L"Error: Failed to start second stage bootloader.");
     }
-    
-    err = uefi_call_wrapper(BS->LoadImage, 6, FALSE, parent_image, path, NULL, 0, &image);
-    if (EFI_ERROR(err)) {
-        Print(L"Error loading %s: %r\n", entry->loader, err);
-        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
-        goto out;
-    }
-    
-    if (config->options_edit) {
-        options = config->options_edit;
-    } else if (entry->options) {
-        options = entry->options;
-    } else {
-        options = NULL;
-    }
-    
-    if (options) {
-        EFI_LOADED_IMAGE *loaded_image;
-        
-        err = uefi_call_wrapper(BS->OpenProtocol, 6, image, &LoadedImageProtocol, &loaded_image,
-                                parent_image, NULL, EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-        if (EFI_ERROR(err)) {
-            Print(L"Error getting LoadedImageProtocol handle: %r\n", err);
-            uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
-            goto out_unload;
-        }
-        loaded_image->LoadOptions = options;
-        loaded_image->LoadOptionsSize = (StrLen(loaded_image->LoadOptions)+1) * sizeof(CHAR16);
-    }
-    
-    err = uefi_call_wrapper(BS->StartImage, 3, image, NULL, NULL);
-out_unload:
-    uefi_call_wrapper(BS->UnloadImage, 1, image);
-out:
-    FreePool(path);
-    return err;
+
+    return efi_status;
 }
