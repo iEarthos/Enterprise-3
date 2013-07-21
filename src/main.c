@@ -49,11 +49,17 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     //CHAR8 *content = NULL;
     
     InitializeLib(image_handle, systab); // Initialize EFI.
-    set_second_stage(image_handle); // Setup the second stage loader.
+    
+    Print(banner, VERSION_MAJOR, VERSION_MINOR); // Print the welcome information.
+    err = set_second_stage(image_handle); // Setup the second stage loader.
+    if (EFI_ERROR(err)) {
+        uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+        return EFI_LOAD_ERROR;
+    }
     
     // Set the colors for the display and clear the display.
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
-    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+    //uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
     
     // Export the device path this image is started from.
     err = uefi_call_wrapper(BS->OpenProtocol, 6, image_handle, &LoadedImageProtocol, &loaded_image,
@@ -89,7 +95,6 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Set the text color.
     uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut); // Clear the screen.
     
-    Print(banner, VERSION_MAJOR, VERSION_MINOR); // Print the welcome information.
     Print(L"Searching for distribution ISO file...");
     
     /*
@@ -158,7 +163,8 @@ EFI_STATUS set_second_stage (EFI_HANDLE image_handle)
         return EFI_BAD_BUFFER_SIZE;
     }
 
-    /*UEFI shell copies the whole line of the command into LoadOptions.
+   /*
+    * UEFI shell copies the whole line of the command into LoadOptions.
     * We ignore the string before the first L' ', i.e. the name of this
     * program.
     */
@@ -181,7 +187,7 @@ EFI_STATUS set_second_stage (EFI_HANDLE image_handle)
         loader_len++;
     }
 
-    /*
+   /*
     * Setup the name of the alternative loader and the LoadOptions for
     * the loader
     */
