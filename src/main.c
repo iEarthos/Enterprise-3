@@ -25,38 +25,7 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
-#define DEFAULT_LOADER L"\\grub.efi"
-#define FALLBACK L"\\fallback.efi"
-#define MOK_MANAGER L"\\MokManager.efi"
-
-typedef struct {
-    CHAR16 *file;
-    CHAR16 *title_show;
-    CHAR16 *title;
-    CHAR16 *version;
-    CHAR16 *machine_id;
-    EFI_HANDLE *device;
-//    enum loader_type type;
-    CHAR16 *loader;
-    CHAR16 *options;
-    EFI_STATUS (*call)(void);
-    BOOLEAN no_autoselect;
-    BOOLEAN non_unique;
-} ConfigEntry;
-
-typedef struct {
-    ConfigEntry **entries;
-    UINTN entry_count;
-    INTN idx_default;
-    INTN idx_default_efivar;
-    UINTN timeout_sec;
-    UINTN timeout_sec_config;
-    INTN timeout_sec_efivar;
-    CHAR16 *entry_default_pattern;
-    CHAR16 *entry_oneshot;
-    CHAR16 *options_edit;
-    CHAR16 *entries_auto;
-} Config;
+#define DEFAULT_LOADER L".\\grub.efi"
 
 static CHAR16 *second_stage;
 static void *load_options;
@@ -117,18 +86,18 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
     console_text_mode(); // Set the console to text mode.
     uefi_call_wrapper(ST->ConIn->Reset, 2, ST->ConIn, FALSE);
     uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, FALSE); // Disable the cursor.
-    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Text color.
-    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+    uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Set the text color.
+    uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut); // Clear the screen.
     
-    Print(banner, VERSION_MAJOR, VERSION_MINOR);
+    Print(banner, VERSION_MAJOR, VERSION_MINOR); // Print the welcome information.
     Print(L"Searching for distribution ISO file...");
     
     /*
-     * Here we check if the ISO file we're going to boot (boot.iso) is present. If not, we
-     * bail, as there is no reason to continue.
+     * Here we check if the ISO file we're going to boot (boot.iso) and our second-stage
+     * bootloader is present. If not, we bail, as there is no reason to continue.
      */
-    if (!file_exists(root_dir, L"\\boot.iso")) { // ISO file doesn't exist.
-        Print(L"\nNo ISO file found with name boot.iso. Aborting!\n");
+    if (!file_exists(root_dir, L".\\boot.iso") || !file_exists(root_dir, DEFAULT_LOADER)) { // ISO file doesn't exist.
+        Print(L"\nError - one or more required components are missing! Check the installation!\n");
         uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor.
         uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
         
@@ -140,20 +109,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
         
         err = EFI_SUCCESS; // Reset error status code.
         
-        ConfigEntry* entry;
-        entry->device = root_dir;
-        entry->loader = L"hanoi.efi"; // Name of program to run?
-        
-        Config* config;
-        //config->entries = entry;
-        
         // Start boot procedure.
         Print(L"Starting boot process now...\n");
-        err = load_image(image_handle, config, entry) != EFI_SUCCESS; // Test by trying to run a sample EFI program I have.
+        err = init_grub(image_handle);
         if (err != EFI_SUCCESS) {
             Print(L"Couldn't load boot loader! Aborting!\n");
             
-            uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor.
+            uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, TRUE); // Enable the cursor in case we return to EFI shell.
             uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
             
             BS->Exit(image_handle, err, sizeof err, NULL); // Quit!
@@ -241,7 +203,7 @@ EFI_STATUS set_second_stage (EFI_HANDLE image_handle)
 return EFI_SUCCESS;
 }
 
-/* Stolen (er.. borrowed) from gummiboot */
+/* Stolen (er.. borrowed) from gummiboot. */
 static EFI_STATUS console_text_mode(VOID) {
 #define EFI_CONSOLE_CONTROL_PROTOCOL_GUID \
 { 0xf42f7782, 0x12e, 0x4c12, { 0x99, 0x56, 0x49, 0xf9, 0x43, 0x4, 0xf7, 0x21 }};
@@ -295,7 +257,6 @@ static EFI_STATUS console_text_mode(VOID) {
  */
 static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name) {
     EFI_FILE_HANDLE handle;
-    EFI_FILE_INFO *info;
     EFI_STATUS err;
     
     err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, 0ULL);
@@ -303,7 +264,6 @@ static UINTN file_exists(EFI_FILE_HANDLE dir, const CHAR16 *name) {
         goto out;
     }
     
-    FreePool(info);
     uefi_call_wrapper(handle->Close, 1, handle);
     return TRUE;
 out:
