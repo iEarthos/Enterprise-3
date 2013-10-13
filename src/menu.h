@@ -20,5 +20,6 @@
 #define _menu_h
 
 EFI_STATUS display_menu(void);
+VOID display_colored_text(CHAR16 *string);
 
 #endif

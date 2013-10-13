@@ -21,8 +21,6 @@
 
 #include "menu.h"
 
-VOID display_colored_text(CHAR16 *string);
-
 #define KEYPRESS(keys, scan, uni) ((((UINT64)keys) << 32) | ((scan) << 16) | (uni))
 #define EFI_SHIFT_STATE_VALID           0x80000000
 #define EFI_RIGHT_CONTROL_PRESSED       0x00000004
@@ -127,10 +125,12 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 
 			/* do not distinguish between left and right keys */
 			if (keydata.KeyState.KeyShiftState & EFI_SHIFT_STATE_VALID) {
-				if (keydata.KeyState.KeyShiftState & (EFI_RIGHT_CONTROL_PRESSED|EFI_LEFT_CONTROL_PRESSED))
+				if (keydata.KeyState.KeyShiftState & (EFI_RIGHT_CONTROL_PRESSED|EFI_LEFT_CONTROL_PRESSED)) {
 					shift |= EFI_CONTROL_PRESSED;
-			if (keydata.KeyState.KeyShiftState & (EFI_RIGHT_ALT_PRESSED|EFI_LEFT_ALT_PRESSED))
-				shift |= EFI_ALT_PRESSED;
+				}
+				if (keydata.KeyState.KeyShiftState & (EFI_RIGHT_ALT_PRESSED|EFI_LEFT_ALT_PRESSED)) {
+					shift |= EFI_ALT_PRESSED;
+				}
 			};
 
 			/* 32 bit modifier keys + 16 bit scan code + 16 bit unicode */
@@ -148,8 +148,9 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 	 * some broken firmwares offer SimpleTextInputExProtocol, but never acually
 	 * handle any key. */
 	err  = uefi_call_wrapper(ST->ConIn->ReadKeyStroke, 2, ST->ConIn, &k);
-	if (EFI_ERROR(err))
+	if (EFI_ERROR(err)) {
 		return err;
+	}
 
 	*key = KEYPRESS(0, k.ScanCode, k.UnicodeChar);
 	return 0;
