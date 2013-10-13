@@ -16,9 +16,9 @@
  *
  */
 
-#ifndef _main_h
-#define _main_h
+#ifndef _menu_h
+#define _menu_h
 
-
+EFI_STATUS display_menu(void);
 
 #endif

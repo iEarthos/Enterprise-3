@@ -20,3 +20,7 @@
 # Junk files
 .DS_Store
 Thumbs.db
+
+# My custom scripts
+install.sh
+bin/

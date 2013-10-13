@@ -1,46 +1,51 @@
-ARCH     = $(shell uname -m | sed s,i[3456789]86,ia32,)
-EFIROOT  = /usr/local
-HDRROOT  = $(EFIROOT)/include/efi
-INCLUDES = -I. -I$(HDRROOT) -I$(HDRROOT)/$(ARCH) -I$(HDRROOT)/protocol
+ #
+ # Tool intended to help facilitate the process of booting Linux on Intel
+ # Macintosh computers made by Apple from a USB stick or similar.
+ #
+ # This program is free software; you can redistribute it and/or modify it
+ # under the terms of the GNU Lesser General Public License as published by
+ # the Free Software Foundation; either version 2.1 of the License, or
+ # (at your option) any later version.
+ #
+ # This program is distributed in the hope that it will be useful, but
+ # WITHOUT ANY WARRANTY; without even the implied warranty of
+ # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ # Lesser General Public License for more details.
+ #
+ # Copyright (C) 2013 SevenBits
+ #
+ #
+ARCH            = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
-CRTOBJS  = $(EFIROOT)/lib/crt0-efi-$(ARCH).o
-CFLAGS   = -O2 -fpic -fshort-wchar -fno-strict-aliasing \
-           -fno-merge-constants
-CPPFLAGS = -DCONFIG_$(ARCH)
-FORMAT   = efi-app-$(ARCH)
-INSTALL  = install
-LDFLAGS  = -nostdlib
-LDSCRIPT = $(EFIROOT)/lib/elf_$(ARCH)_efi.lds
-LDFLAGS += -T $(LDSCRIPT) -shared -Bsymbolic -L$(EFIROOT)/lib $(CRTOBJS)
-LOADLIBS = -lefi -lgnuefi $(shell $(CC) -print-libgcc-file-name)
+OBJS            = main.o menu.o
+TARGET          = enterprise.efi
 
-# Toolchain prefix
-#
-prefix      = 
-CC          = $(prefix)gcc
-AS          = $(prefix)as
-LD          = $(prefix)ld
-AR          = $(prefix)ar
-RANLIB      = $(prefix)ranlib
-OBJCOPY     = $(prefix)objcopy
+EFIINC          = /usr/local/include/efi
+EFIINCS         = -I$(EFIINC) -I$(EFIINC)/$(ARCH) -I$(EFIINC)/protocol
+LIB             = /usr/local/lib
+EFILIB          = /usr/local/lib
+EFI_CRT_OBJS    = $(EFILIB)/crt0-efi-$(ARCH).o
+EFI_LDS         = $(EFILIB)/elf_$(ARCH)_efi.lds
 
-# Rules
-#
-enterprise.efi: *.so
-	$(OBJCOPY) -j .text -j .sdata -j .data -j .dynamic -j .dynsym -j .rel \
-                   -j .rela -j .reloc --target=$(FORMAT) *.so $@
+CFLAGS          = $(EFIINCS) -fno-stack-protector -fpic \
+		  		-fshort-wchar -mno-red-zone -Wall 
+ifeq ($(ARCH),x86_64)
+  CFLAGS += -DEFI_FUNCTION_WRAPPER
+endif
 
-*.so: *.o
-	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBS)
+LDFLAGS         = -nostdlib -znocombreloc -T $(EFI_LDS) -shared \
+		  -Bsymbolic -L $(EFILIB) -L $(LIB) $(EFI_CRT_OBJS) 
 
-*.o: *.c
-	$(CC) $(INCLUDES) $(CFLAGS) $(CPPFLAGS) -c $< -o $@
-
-# Targets
-#
-TARGETS = enterprise.efi
-
-all: $(TARGETS)
+all: $(TARGET)
 
 clean:
-	rm -f $(TARGETS) *.o *.so
+	rm *.o
+	rm *.so
+
+enterprise.so: $(OBJS)
+	ld $(LDFLAGS) $(OBJS) -o $@ -lefi -lgnuefi
+
+%.efi: %.so
+	objcopy -j .text -j .sdata -j .data -j .dynamic \
+		-j .dynsym  -j .rel -j .rela -j .reloc \
+		--target=efi-app-$(ARCH) $^ $@
