@@ -7,7 +7,7 @@ Now, with that out the way (phew!), let's get to the interesting stuff, shall we
 
 ### LICENSE ###
 
-Enterprise is under the GPL. Enterprise is not *only* my program; it pulls in code from other software projects (namely, shim, gummiboot, etc), and I want to make sure that not only they get credit from their work, but that others can benefit from what I've done as well. Releasing Enterprise under the GPL allows me to most easily do this.
+Enterprise is under the "GPL. Enterprise is not *only* my program; it pulls in code from other software projects (namely, shim, gummiboot, etc), and I want to make sure that not only they get credit from their work, but that others can benefit from what I've done as well. Releasing Enterprise under the LGPL allows me to most easily do this.
 
 ### CODING STYLE ###
 
@@ -25,6 +25,8 @@ is _not_ complaint. This is how I prefer it:
     } else {
         sam();
     }
+    
+Secondly, all source code files must use *tabs* - not spaces, and I expect a tab width of 4. If your editor is configured to use spaces, you *must* convert the spaces into tabs with a width of 4. This can be done with a UNIX command like `unexpand --first-only --tabs=4`.
 
 Same goes with functions, other blocks like `while`, `do`, and pretty much anything else. Please realize that not everything will be under this style (particularly code I've pulled in from elsewhere) and while, yes, that makes me a hypocrite, I don't care. I'll do my best to follow this style, and if you contribute, I expect you to do yours.
 
