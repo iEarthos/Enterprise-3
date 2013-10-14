@@ -28,7 +28,7 @@ is _not_ complaint. This is how I prefer it:
     
 Secondly, all source code files must use *tabs* - not spaces, and I expect a tab width of 4. If your editor is configured to use spaces, you *must* convert the spaces into tabs with a width of 4. This can be done with a UNIX command like `unexpand --first-only --tabs=4`.
 
-Same goes with functions, other blocks like `while`, `do`, and pretty much anything else. Please realize that not everything will be under this style (particularly code I've pulled in from elsewhere) and while, yes, that makes me a hypocrite, I don't care. I'll do my best to follow this style, and if you contribute, I expect you to do yours.
+Same goes with functions, other blocks like `while`, `do`, and pretty much anything else. Please realize that not everything will be under this style (particularly code I've pulled in from elsewhere), but I'll do my best to follow this style, and if you contribute, I expect you to do yours.
 
 ### PULL REQUESTS ###
 

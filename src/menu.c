@@ -21,6 +21,8 @@
 
 #include "menu.h"
 
+EFI_STATUS configure_kernel(CHAR16 **options);
+
 #define KEYPRESS(keys, scan, uni) ((((UINT64)keys) << 32) | ((scan) << 16) | (uni))
 #define EFI_SHIFT_STATE_VALID           0x80000000
 #define EFI_RIGHT_CONTROL_PRESSED       0x00000004
@@ -137,7 +139,7 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 			keypress = KEYPRESS(shift, keydata.Key.ScanCode, keydata.Key.UnicodeChar);
 			if (keypress > 0) {
 				*key = keypress;
-				return 0;
+				return EFI_SUCCESS;
 			}
 		}
 	}
@@ -153,12 +155,13 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 	}
 
 	*key = KEYPRESS(0, k.ScanCode, k.UnicodeChar);
-	return 0;
+	return EFI_SUCCESS;
 }
 
 EFI_STATUS display_menu(void) {
 	EFI_STATUS err;
 	UINT64 key;
+	CHAR16 *boot_options;
 	
 	/*
 	 * Give the user some information as to what they can do at this point.
@@ -174,6 +177,7 @@ EFI_STATUS display_menu(void) {
 		Print(L"Boot Linux");
 	} else if (key == '2') {
 		Print(L"Configure Linux");
+		configure_kernel(&boot_options);
 	} else {
 		// Reboot the system.
 		err = uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
@@ -181,6 +185,40 @@ EFI_STATUS display_menu(void) {
 		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 	}
 	
+	uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+	return EFI_SUCCESS;
+}
+
+int options_array[20];
+
+#define OPTION(string, id) \
+	if (options_array[id]) { \
+		display_colored_text(string); \
+	} else { \
+		Print(string); \
+	}
+
+EFI_STATUS configure_kernel(CHAR16 **options) {
+	UINT64 key;
+	EFI_STATUS err;
+	
+	do {
+		uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+		/*
+		 * Configure the boot options to the Linux kernel. Let the user select any option
+		 * that they think might facilitate booting Linux and add it to the options
+		 * string once they press Return.
+		 */
+		display_colored_text(L"\n\n    Configure Kernel Options:\n");
+		Print(L"    Press the key corresponding to the number of the option to toggle.\n");
+		OPTION(L"\n    1) nomodeset - Disable kernel mode setting.", 0);
+		OPTION(L"\n    2) acpi=off - Disable ACPI.", 1);
+		Print(L"\n\n    0) Boot with selected options.\n");
+		
+		err = key_read(&key, TRUE);
+		int index = key - '0';
+		options_array[index - 1] = !options_array[index - 1];
+	} while(key != '0');
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 	return EFI_SUCCESS;
 }
