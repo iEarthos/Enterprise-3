@@ -30,7 +30,7 @@ For those of you in the know, I code using a style called [1TBS](https://en.wiki
 
 Same goes with functions, other blocks like `while`, `do`, and pretty much anything else. Please realize that not everything will be under this style (particularly code I've pulled in from elsewhere), but I'll do my best to follow this style, and if you contribute, I expect you to do yours.
 
-Secondly, all source code files must use *tabs* - not spaces, and I expect a tab width of 4. If your editor is configured to use spaces, you *must* convert the spaces into tabs with a width of 4. This can be done with a UNIX command like `unexpand --first-only --tabs=4`.
+Secondly, all source code files must use *tabs* - not spaces, and I expect a tab width of 4. If your editor is configured to use spaces, you *must* convert the spaces into tabs with a width of 4. This can be done with a UNIX command like `unexpand --tabs=4`.
 
 ### PULL REQUESTS ###
 

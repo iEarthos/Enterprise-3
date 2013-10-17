@@ -29,6 +29,7 @@
 static EFI_STATUS console_text_mode(VOID);
 
 EFI_LOADED_IMAGE *this_image = NULL;
+EFI_FILE *root_dir;
 
 EFI_DEVICE_PATH *first_new_option = NULL; // The path to the GRUB image we want to load.
 
@@ -47,17 +48,45 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 		return err;
 	}
 	
+	root_dir = LibOpenRoot(this_image->DeviceHandle);
+    if (!root_dir) {
+		Print(L"Unable to open root directory: %r ", err);
+		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+		return EFI_LOAD_ERROR;
+    }
+	
 	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Set the text color.
 	uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut); // Clear the screen.
 	Print(banner, VERSION_MAJOR, VERSION_MINOR); // Print the welcome information.
 	uefi_call_wrapper(ST->ConIn->Reset, 2, ST->ConIn, FALSE);
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, FALSE); // Disable display of the cursor.
 	
+	// Check to make sure that we have our configuration file.
+	if (!file_exists(root_dir, L"\\efi\\boot\\.MLUL-Live-USB")) {
+		 display_error_text(L"Error: can't find configuration file.\n");
+	}
 	// Display the menu where the user can select what they want to do.
 	display_menu();
 	
 	return EFI_SUCCESS;
 }
+
+/* Try to open a file. If we can (i.e it exists) return TRUE. Otherwise, return FALSE. */
+BOOLEAN file_exists(EFI_FILE_HANDLE dir, CHAR16 *name) {
+	EFI_FILE_HANDLE handle;
+	EFI_STATUS err;
+
+	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, 0ULL);
+	if (EFI_ERROR(err)) {
+		goto out;
+	}
+
+	uefi_call_wrapper(handle->Close, 1, handle);
+	return TRUE;
+out:
+	return FALSE;
+}
+
 
 static EFI_STATUS console_text_mode(VOID) {
 	#define EFI_CONSOLE_CONTROL_PROTOCOL_GUID \

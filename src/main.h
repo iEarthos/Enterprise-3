@@ -19,6 +19,6 @@
 #ifndef _main_h
 #define _main_h
 
-
+BOOLEAN file_exists(EFI_FILE_HANDLE dir, CHAR16 *name);
 
 #endif
