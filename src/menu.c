@@ -202,7 +202,7 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 	UINT64 key;
 	EFI_STATUS err;
 	
-	StrCpy(options, L"");
+	StrCpy(options, L""); // Not strictly necessary, but it doesn't hurt to be double safe.
 	
 	do {
 		uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
