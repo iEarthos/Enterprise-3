@@ -237,7 +237,7 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 		StrCat(options, L"acpi=off");
 	}
 	
-	uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);
 	return EFI_SUCCESS;
 }
 

@@ -45,6 +45,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	err = uefi_call_wrapper(BS->HandleProtocol, 3, image_handle, &LoadedImageProtocol, (void *)&this_image);
 	if (EFI_ERROR(err)) {
 		Print(L"Error: could not find loaded image: %d\n", err);
+		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 		return err;
 	}
 	
