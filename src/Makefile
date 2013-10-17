@@ -27,7 +27,7 @@ EFILIB          = /usr/local/lib
 EFI_CRT_OBJS    = $(EFILIB)/crt0-efi-$(ARCH).o
 EFI_LDS         = $(EFILIB)/elf_$(ARCH)_efi.lds
 
-CFLAGS          = $(EFIINCS) -fno-stack-protector -fpic \
+CFLAGS          = $(EFIINCS) -fno-stack-protector -std=c99 -fpic \
 		  		-fshort-wchar -mno-red-zone -Wall 
 ifeq ($(ARCH),x86_64)
   CFLAGS += -DEFI_FUNCTION_WRAPPER

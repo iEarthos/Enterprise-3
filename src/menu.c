@@ -201,6 +201,9 @@ int options_array[20];
 EFI_STATUS configure_kernel(CHAR16 **options) {
 	UINT64 key;
 	EFI_STATUS err;
+	CHAR16 *option_string = L"";
+	
+	StrCpy(option_string, L"");
 	
 	do {
 		uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
@@ -216,9 +219,25 @@ EFI_STATUS configure_kernel(CHAR16 **options) {
 		Print(L"\n\n    0) Boot with selected options.\n");
 		
 		err = key_read(&key, TRUE);
+		if (EFI_ERROR(err)) {
+			Print(L"Error: could not read from keyboard: %d\n", err);
+			return err;
+		}
+		
 		int index = key - '0';
 		options_array[index - 1] = !options_array[index - 1];
 	} while(key != '0');
+	
+	// Now concatenate the individual options onto the option line.
+	// I'm investigating a better way to do this.
+	if (options_array[0]) {
+		StrCat(option_string, L"nomodeset");
+	}
+	
+	if (options_array[1]) {
+		StrCat(option_string, L"acpi=off");
+	}
+	
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 	return EFI_SUCCESS;
 }
