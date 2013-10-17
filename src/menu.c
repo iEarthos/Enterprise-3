@@ -21,7 +21,7 @@
 
 #include "menu.h"
 
-EFI_STATUS configure_kernel(CHAR16 **options);
+EFI_STATUS configure_kernel(CHAR16 *options);
 
 #define KEYPRESS(keys, scan, uni) ((((UINT64)keys) << 32) | ((scan) << 16) | (uni))
 #define EFI_SHIFT_STATE_VALID           0x80000000
@@ -161,7 +161,7 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 EFI_STATUS display_menu(void) {
 	EFI_STATUS err;
 	UINT64 key;
-	CHAR16 *boot_options;
+	CHAR16 boot_options[150] = L"";
 	
 	/*
 	 * Give the user some information as to what they can do at this point.
@@ -177,7 +177,7 @@ EFI_STATUS display_menu(void) {
 		Print(L"Boot Linux");
 	} else if (key == '2') {
 		Print(L"Configure Linux");
-		configure_kernel(&boot_options);
+		configure_kernel(boot_options);
 	} else {
 		// Reboot the system.
 		err = uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
@@ -198,19 +198,18 @@ int options_array[20];
 		Print(string); \
 	}
 
-EFI_STATUS configure_kernel(CHAR16 **options) {
+EFI_STATUS configure_kernel(CHAR16 *options) {
 	UINT64 key;
 	EFI_STATUS err;
-	CHAR16 *option_string = L"";
 	
-	StrCpy(option_string, L"");
+	StrCpy(options, L"");
 	
 	do {
 		uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
 		/*
 		 * Configure the boot options to the Linux kernel. Let the user select any option
 		 * that they think might facilitate booting Linux and add it to the options
-		 * string once they press Return.
+		 * string once they press 0.
 		 */
 		display_colored_text(L"\n\n    Configure Kernel Options:\n");
 		Print(L"    Press the key corresponding to the number of the option to toggle.\n");
@@ -231,11 +230,11 @@ EFI_STATUS configure_kernel(CHAR16 **options) {
 	// Now concatenate the individual options onto the option line.
 	// I'm investigating a better way to do this.
 	if (options_array[0]) {
-		StrCat(option_string, L"nomodeset");
+		StrCat(options, L"nomodeset");
 	}
 	
 	if (options_array[1]) {
-		StrCat(option_string, L"acpi=off");
+		StrCat(options, L"acpi=off");
 	}
 	
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
