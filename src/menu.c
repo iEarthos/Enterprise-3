@@ -20,6 +20,7 @@
 #include <efilib.h>
 
 #include "menu.h"
+#include "main.h"
 
 EFI_STATUS configure_kernel(CHAR16 *options);
 
@@ -35,7 +36,7 @@ EFI_STATUS configure_kernel(CHAR16 *options);
 #define KEYCHAR(k) ((k) & 0xffff)
 #define CHAR_CTRL(c) ((c) - 'a' + 1)
 
-static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
+EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 	#define EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID \
 		{ 0xdd9e7534, 0x7762, 0x4698, { 0x8c, 0x14, 0xf5, 0x85, 0x17, 0xa6, 0x25, 0xaa } }
 
@@ -174,13 +175,16 @@ EFI_STATUS display_menu(void) {
 	
 	err = key_read(&key, TRUE);
 	if (key == '1') {
-		Print(L"Boot Linux");
+		Print(L"Boot Linux\n");
+		boot_Linux_with_options(L"");
 	} else if (key == '2') {
-		Print(L"Configure Linux");
+		Print(L"Configure Linux\n");
 		configure_kernel(boot_options);
 	} else {
 		// Reboot the system.
 		err = uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
+		
+		// Should never get here unless there's an error.
 		Print(L"Error calling ResetSystem: %r", err);
 		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 	}
@@ -230,11 +234,11 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 	// Now concatenate the individual options onto the option line.
 	// I'm investigating a better way to do this.
 	if (options_array[0]) {
-		StrCat(options, L"nomodeset");
+		StrCat(options, L"nomodeset ");
 	}
 	
 	if (options_array[1]) {
-		StrCat(options, L"acpi=off");
+		StrCat(options, L"acpi=off ");
 	}
 	
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);

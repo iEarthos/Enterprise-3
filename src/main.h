@@ -20,5 +20,6 @@
 #define _main_h
 
 BOOLEAN file_exists(EFI_FILE_HANDLE dir, CHAR16 *name);
+EFI_STATUS boot_Linux_with_options(CHAR16 *params);
 
 #endif

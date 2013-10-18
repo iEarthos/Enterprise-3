@@ -62,12 +62,30 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	uefi_call_wrapper(ST->ConIn->Reset, 2, ST->ConIn, FALSE);
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, FALSE); // Disable display of the cursor.
 	
-	// Check to make sure that we have our configuration file.
+	// Check to make sure that we have our configuration file and GRUB bootloader.
 	if (!file_exists(root_dir, L"\\efi\\boot\\.MLUL-Live-USB")) {
 		 display_error_text(L"Error: can't find configuration file.\n");
 	}
+	
+	if (!file_exists(root_dir, L"\\efi\\boot\\boot.efi")) {
+		 display_error_text(L"Error: can't find GRUB bootloader!.\n");
+	}
 	// Display the menu where the user can select what they want to do.
 	display_menu();
+	
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS boot_Linux_with_options(CHAR16 *params) {
+	if (file_exists(root_dir, L"\\efi\\boot\\boot.iso")) {
+		 display_error_text(L"Error: can't find ISO file to boot!\n");
+		 display_error_text(L"It should be located under /efi/boot/ on this device.\n");
+		 Print(L"Press any key to reboot.\n");
+		 key_read(NULL, TRUE); // We don't care about the key, but we do need to wait.
+		 uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
+		 
+		 return EFI_LOAD_ERROR;
+	}
 	
 	return EFI_SUCCESS;
 }
