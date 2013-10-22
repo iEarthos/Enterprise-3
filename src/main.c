@@ -28,8 +28,10 @@
 
 static EFI_STATUS console_text_mode(VOID);
 
-EFI_LOADED_IMAGE *this_image = NULL;
-EFI_FILE *root_dir;
+static EFI_LOADED_IMAGE *this_image = NULL;
+static EFI_FILE *root_dir;
+
+static EFI_HANDLE global_image;
 
 EFI_DEVICE_PATH *first_new_option = NULL; // The path to the GRUB image we want to load.
 
@@ -41,6 +43,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	console_text_mode(); // Put the console into text mode. If we don't do that, the image of the Apple
 						 // boot manager will remain on the screen and the user won't see any output
 						 // from the program.
+	global_image = image_handle;
 	
 	err = uefi_call_wrapper(BS->HandleProtocol, 3, image_handle, &LoadedImageProtocol, (void *)&this_image);
 	if (EFI_ERROR(err)) {
@@ -70,21 +73,44 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	if (!file_exists(root_dir, L"\\efi\\boot\\boot.efi")) {
 		 display_error_text(L"Error: can't find GRUB bootloader!.\n");
 	}
+	
+	if (!file_exists(root_dir, L"\\efi\\boot\\boot.iso")) {
+		 display_error_text(L"Error: can't find ISO file to boot!.\n");
+	}
 	// Display the menu where the user can select what they want to do.
+	
+	// Load the EFI boot loader image into memory.
 	display_menu();
 	
 	return EFI_SUCCESS;
 }
 
 EFI_STATUS boot_Linux_with_options(CHAR16 *params) {
-	if (file_exists(root_dir, L"\\efi\\boot\\boot.iso")) {
-		 display_error_text(L"Error: can't find ISO file to boot!\n");
-		 display_error_text(L"It should be located under /efi/boot/ on this device.\n");
-		 Print(L"Press any key to reboot.\n");
-		 key_read(NULL, TRUE); // We don't care about the key, but we do need to wait.
-		 uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
-		 
-		 return EFI_LOAD_ERROR;
+	EFI_STATUS err;
+	EFI_HANDLE image;
+	EFI_DEVICE_PATH *path;
+	
+	// Load the EFI boot loader image into memory.
+	path = FileDevicePath(this_image->DeviceHandle, L"\\efi\\boot\\boot.efi");
+	err = uefi_call_wrapper(BS->LoadImage, 6, FALSE, global_image, path, NULL, 0, &image);
+	if (EFI_ERROR(err)) {
+		display_error_text(L"Error loading image: ");
+		Print(L"%r\n", err);
+		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+		FreePool(path);
+		
+		return EFI_LOAD_ERROR;
+	}
+	
+	// Start the EFI boot loader.
+	err = uefi_call_wrapper(BS->StartImage, 3, image, NULL, NULL);
+	if (EFI_ERROR(err)) {
+		display_error_text(L"Error starting image: ");
+		Print(L"%r\n", err);
+		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
+		FreePool(path);
+		
+		return EFI_LOAD_ERROR;
 	}
 	
 	return EFI_SUCCESS;
