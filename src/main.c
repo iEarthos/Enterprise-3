@@ -103,6 +103,7 @@ EFI_STATUS boot_Linux_with_options(CHAR16 *params) {
 	}
 	
 	// Start the EFI boot loader.
+	uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut); // Clear the screen.
 	err = uefi_call_wrapper(BS->StartImage, 3, image, NULL, NULL);
 	if (EFI_ERROR(err)) {
 		display_error_text(L"Error starting image: ");

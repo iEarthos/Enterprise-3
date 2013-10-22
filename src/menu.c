@@ -241,6 +241,7 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 		StrCat(options, L"acpi=off ");
 	}
 	
+	boot_Linux_with_options(options);
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);
 	return EFI_SUCCESS;
 }
