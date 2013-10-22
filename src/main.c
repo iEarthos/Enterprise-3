@@ -54,7 +54,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	
 	root_dir = LibOpenRoot(this_image->DeviceHandle);
     if (!root_dir) {
-		Print(L"Unable to open root directory: %r ", err);
+		Print(L"Unable to open root directory.\n");
 		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 		return EFI_LOAD_ERROR;
     }
@@ -77,6 +77,7 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	if (!file_exists(root_dir, L"\\efi\\boot\\boot.iso")) {
 		 display_error_text(L"Error: can't find ISO file to boot!.\n");
 	}
+	
 	// Display the menu where the user can select what they want to do.
 	display_menu();
 	

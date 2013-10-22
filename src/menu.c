@@ -242,8 +242,11 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 	}
 	
 	boot_Linux_with_options(options);
+	
+	// Shouldn't get here unless something went wrong with the boot process.
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);
-	return EFI_SUCCESS;
+	uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
+	return EFI_LOAD_ERROR;
 }
 
 VOID display_colored_text(CHAR16 *string) {
