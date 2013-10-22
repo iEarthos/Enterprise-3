@@ -78,8 +78,6 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 		 display_error_text(L"Error: can't find ISO file to boot!.\n");
 	}
 	// Display the menu where the user can select what they want to do.
-	
-	// Load the EFI boot loader image into memory.
 	display_menu();
 	
 	return EFI_SUCCESS;
