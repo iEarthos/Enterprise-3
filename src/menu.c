@@ -175,10 +175,8 @@ EFI_STATUS display_menu(void) {
 	
 	err = key_read(&key, TRUE);
 	if (key == '1') {
-		Print(L"Boot Linux\n");
 		boot_Linux_with_options(L"");
 	} else if (key == '2') {
-		Print(L"Configure Linux\n");
 		configure_kernel(boot_options);
 	} else {
 		// Reboot the system.
