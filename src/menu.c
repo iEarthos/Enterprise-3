@@ -218,6 +218,10 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 		Print(L"    Press the key corresponding to the number of the option to toggle.\n");
 		OPTION(L"\n    1) nomodeset - Disable kernel mode setting.", 0);
 		OPTION(L"\n    2) acpi=off - Disable ACPI.", 1);
+		OPTION(L"\n    3) noefi - Disable EFI runtime services support.", 2);
+		OPTION(L"\n    4) vga=ask - Show a menu of supported video modes.", 3);
+		OPTION(L"\n    9) gpt - Forces disk with valid GPT signature but invalid Protective MBR" \
+				" to be treated as GPT (useful for installing Linux on a Mac drive).", 8);
 		Print(L"\n\n    0) Boot with selected options.\n");
 		
 		err = key_read(&key, TRUE);
@@ -238,6 +242,18 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 	
 	if (options_array[1]) {
 		StrCat(options, L"acpi=off ");
+	}
+	
+	if (options_array[2]) {
+		StrCat(options, L"noefi ");
+	}
+	
+	if (options_array[3]) {
+		StrCat(options, L"vga=ask ");
+	}
+	
+	if (options_array[9]) {
+		StrCat(options, L"gpt ");
 	}
 	
 	boot_Linux_with_options(options);

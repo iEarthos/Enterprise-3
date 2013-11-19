@@ -93,7 +93,6 @@ EFI_STATUS boot_Linux_with_options(CHAR16 *params) {
 	EFI_HANDLE image;
 	EFI_DEVICE_PATH *path;
 	
-	Print(L"sizeof(CHAR8) = %d - sizeof(16) = %d", sizeof(CHAR8), sizeof(CHAR16));
 	//CHAR8 *sized_str = (CHAR8 *)L"nomodeset";
 	CHAR8 *sized_str = UTF16toASCII(params, StrLen(params) + 1);
 	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str, sizeof(sized_str) * strlena(sized_str) + 1, FALSE);
