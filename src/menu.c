@@ -21,6 +21,7 @@
 
 #include "menu.h"
 #include "main.h"
+#include "utils.h"
 
 EFI_STATUS configure_kernel(CHAR16 *options);
 
@@ -245,16 +246,4 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);
 	uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
 	return EFI_LOAD_ERROR;
-}
-
-VOID display_colored_text(CHAR16 *string) {
-	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_YELLOW|EFI_BACKGROUND_BLACK);
-	Print(string);
-	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
-}
-
-VOID display_error_text(CHAR16 *string) {
-	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_RED|EFI_BACKGROUND_BLACK);
-	Print(string);
-	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
 }

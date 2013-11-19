@@ -21,7 +21,5 @@
 
 EFI_STATUS display_menu(void);
 EFI_STATUS key_read(UINT64 *key, BOOLEAN wait);
-VOID display_colored_text(CHAR16 *string);
-VOID display_error_text(CHAR16 *string);
 
 #endif

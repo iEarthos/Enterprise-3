@@ -21,7 +21,11 @@
 
 #include "main.h"
 #include "menu.h"
+#include "utils.h"
 #define banner L"Welcome to Enterprise! - Version %d.%d\n"
+
+static const EFI_GUID enterprise_variable_guid = {0x4a67b082, 0x0a4c, 0x41cf, {0xb6, 0xc7, 0x44, 0x0b, 0x29, 0xbb, 0x8c, 0x4f}};
+static const EFI_GUID grub_variable_guid = {0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0x0D, 0x00, 0xE0, 0x98, 0x03, 0x2B,0x8C}};
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
@@ -88,6 +92,11 @@ EFI_STATUS boot_Linux_with_options(CHAR16 *params) {
 	EFI_STATUS err;
 	EFI_HANDLE image;
 	EFI_DEVICE_PATH *path;
+	
+	Print(L"sizeof(CHAR8) = %d - sizeof(16) = %d", sizeof(CHAR8), sizeof(CHAR16));
+	//CHAR8 *sized_str = (CHAR8 *)L"nomodeset";
+	CHAR8 *sized_str = UTF16toASCII(params, StrLen(params) + 1);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str, sizeof(sized_str) * strlena(sized_str) + 1, FALSE);
 	
 	// Load the EFI boot loader image into memory.
 	path = FileDevicePath(this_image->DeviceHandle, L"\\efi\\boot\\boot.efi");
