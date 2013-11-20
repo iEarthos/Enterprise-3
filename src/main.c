@@ -30,6 +30,9 @@ static const EFI_GUID grub_variable_guid = {0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
+static VOID ReadConfigurationFile(const CHAR16 *name);
+static CHAR8* KernelLocationForDistributionName(const CHAR8 *name);
+static CHAR8* InitRDLocationForDistributionName(const CHAR8 *name);
 static EFI_STATUS console_text_mode(VOID);
 
 static EFI_LOADED_IMAGE *this_image = NULL;
@@ -69,21 +72,32 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	uefi_call_wrapper(ST->ConIn->Reset, 2, ST->ConIn, FALSE);
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, FALSE); // Disable display of the cursor.
 	
+	BOOLEAN can_continue = TRUE;
+	
 	// Check to make sure that we have our configuration file and GRUB bootloader.
 	if (!FileExists(root_dir, L"\\efi\\boot\\.MLUL-Live-USB")) {
 		 DisplayErrorText(L"Error: can't find configuration file.\n");
+	} else {
+		ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
 	}
 	
 	if (!FileExists(root_dir, L"\\efi\\boot\\boot.efi")) {
 		 DisplayErrorText(L"Error: can't find GRUB bootloader!.\n");
+		 can_continue = FALSE;
 	}
 	
 	if (!FileExists(root_dir, L"\\efi\\boot\\boot.iso")) {
 		 DisplayErrorText(L"Error: can't find ISO file to boot!.\n");
+		 can_continue = FALSE;
 	}
 	
 	// Display the menu where the user can select what they want to do.
-	DisplayMenu();
+	if (can_continue) {
+		DisplayMenu();
+	} else {
+		Print(L"Cannot continue because core files are missing. Restarting...\n");
+		uefi_call_wrapper(BS->Stall, 1, 1000 * 1000);
+	}
 	
 	return EFI_SUCCESS;
 }
@@ -124,26 +138,33 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	return EFI_SUCCESS;
 }
 
-CHAR8* KernelLocationForDistributionName(CHAR16 *nane) {
+static VOID ReadConfigurationFile(const CHAR16 *name) {
+	LinuxBootOption *boot_options = AllocateZeroPool(sizeof(LinuxBootOption));
+	
+	CHAR8 *contents;
+	UINTN read_bytes = FileRead(root_dir, name, &contents);
+	if (read_bytes == 0) {
+		DisplayErrorText(L"Error: Couldn't read configuration information.");
+	}
+	
+	UINTN position = 0;
+	CHAR8 *key, *value;
+	while ((GetConfigurationKeyAndValue(contents, &position, &key, &value))) {
+		if (strcmpa((CHAR8 *)"kernel", key) == 0) {
+			boot_options->kernel_path = KernelLocationForDistributionName(value);
+		} else if (strcmpa((CHAR8 *)"inird", key) == 0) {
+			boot_options->initrd_path = InitRDLocationForDistributionName(value);
+		}
+	}
+}
+
+static CHAR8* KernelLocationForDistributionName(const CHAR8 *name) {
 	return (CHAR8 *)"";
 }
 
-/* Try to open a file. If we can (i.e it exists) return TRUE. Otherwise, return FALSE. */
-BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name) {
-	EFI_FILE_HANDLE handle;
-	EFI_STATUS err;
-
-	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, NULL);
-	if (EFI_ERROR(err)) {
-		goto out;
-	}
-
-	uefi_call_wrapper(handle->Close, 1, handle);
-	return TRUE;
-out:
-	return FALSE;
+static CHAR8* InitRDLocationForDistributionName(const CHAR8 *name) {
+	return (CHAR8 *)"";
 }
-
 
 static EFI_STATUS console_text_mode(VOID) {
 	#define EFI_CONSOLE_CONTROL_PROTOCOL_GUID \

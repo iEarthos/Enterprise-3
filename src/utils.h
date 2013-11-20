@@ -16,12 +16,16 @@
  *
  */
 
+#pragma once
 #ifndef _utils_h
 #define _utils_h
 
 EFI_STATUS efi_set_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 *buf, UINTN size, BOOLEAN persistent);
 EFI_STATUS efi_get_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 **buffer, UINTN *size);
 CHAR8* UTF16toASCII(CHAR16 *InString, UINTN InLength);
+BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name);
+UINTN FileRead(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content);
+CHAR8* GetConfigurationKeyAndValue(CHAR8 *content, UINTN *pos, CHAR8 **key_ret, CHAR8 **value_ret);
 VOID DisplayColoredText(CHAR16 *string);
 VOID DisplayErrorText(CHAR16 *string);
 

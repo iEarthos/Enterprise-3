@@ -16,10 +16,15 @@
  *
  */
 
+#pragma once
 #ifndef _main_h
 #define _main_h
 
-BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name);
+typedef struct LinuxBootOption {
+   CHAR8 *kernel_path;
+   CHAR8 *initrd_path;
+} LinuxBootOption;
+
 EFI_STATUS BootLinuxWithOptions(CHAR16 *params);
 
 #endif
