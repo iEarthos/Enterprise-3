@@ -23,8 +23,6 @@
 #include "main.h"
 #include "utils.h"
 
-EFI_STATUS configure_kernel(CHAR16 *options);
-
 #define KEYPRESS(keys, scan, uni) ((((UINT64)keys) << 32) | ((scan) << 16) | (uni))
 #define EFI_SHIFT_STATE_VALID           0x80000000
 #define EFI_RIGHT_CONTROL_PRESSED       0x00000004
@@ -37,7 +35,7 @@ EFI_STATUS configure_kernel(CHAR16 *options);
 #define KEYCHAR(k) ((k) & 0xffff)
 #define CHAR_CTRL(c) ((c) - 'a' + 1)
 
-EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
+static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 	#define EFI_SIMPLE_TEXT_INPUT_EX_PROTOCOL_GUID \
 		{ 0xdd9e7534, 0x7762, 0x4698, { 0x8c, 0x14, 0xf5, 0x85, 0x17, 0xa6, 0x25, 0xaa } }
 
@@ -160,7 +158,7 @@ EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 	return EFI_SUCCESS;
 }
 
-EFI_STATUS display_menu(void) {
+EFI_STATUS DisplayMenu(void) {
 	EFI_STATUS err;
 	UINT64 key;
 	CHAR16 boot_options[150] = L"";
@@ -168,7 +166,7 @@ EFI_STATUS display_menu(void) {
 	/*
 	 * Give the user some information as to what they can do at this point.
 	 */
-	display_colored_text(L"\n\n    Available boot options:\n");
+	DisplayColoredText(L"\n\n    Available boot options:\n");
 	Print(L"    Press the key corresponding to the number of the option that you want.\n");
 	Print(L"\n    1) Boot Linux from ISO file\n");
 	Print(L"    2) Modify Linux kernel boot options (advanced!)\n");
@@ -176,9 +174,9 @@ EFI_STATUS display_menu(void) {
 	
 	err = key_read(&key, TRUE);
 	if (key == '1') {
-		boot_Linux_with_options(L"");
+		BootLinuxWithOptions(L"");
 	} else if (key == '2') {
-		configure_kernel(boot_options);
+		ConfigureKernel(boot_options);
 	} else {
 		// Reboot the system.
 		err = uefi_call_wrapper(RT->ResetSystem, 4, EfiResetCold, EFI_SUCCESS, 0, NULL);
@@ -196,12 +194,12 @@ int options_array[20];
 
 #define OPTION(string, id) \
 	if (options_array[id]) { \
-		display_colored_text(string); \
+		DisplayColoredText(string); \
 	} else { \
 		Print(string); \
 	}
 
-EFI_STATUS configure_kernel(CHAR16 *options) {
+EFI_STATUS ConfigureKernel(CHAR16 *options) {
 	UINT64 key;
 	EFI_STATUS err;
 	
@@ -214,7 +212,7 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 		 * that they think might facilitate booting Linux and add it to the options
 		 * string once they press 0.
 		 */
-		display_colored_text(L"\n\n    Configure Kernel Options:\n");
+		DisplayColoredText(L"\n\n    Configure Kernel Options:\n");
 		Print(L"    Press the key corresponding to the number of the option to toggle.\n");
 		OPTION(L"\n    1) nomodeset - Disable kernel mode setting.", 0);
 		OPTION(L"\n    2) acpi=off - Disable ACPI.", 1);
@@ -252,11 +250,11 @@ EFI_STATUS configure_kernel(CHAR16 *options) {
 		StrCat(options, L"vga=ask ");
 	}
 	
-	if (options_array[9]) {
+	if (options_array[8]) {
 		StrCat(options, L"gpt ");
 	}
 	
-	boot_Linux_with_options(options);
+	BootLinuxWithOptions(options);
 	
 	// Shouldn't get here unless something went wrong with the boot process.
 	uefi_call_wrapper(BS->Stall, 1, 3 * 1000);

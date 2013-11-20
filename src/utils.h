@@ -22,7 +22,7 @@
 EFI_STATUS efi_set_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 *buf, UINTN size, BOOLEAN persistent);
 EFI_STATUS efi_get_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 **buffer, UINTN *size);
 CHAR8* UTF16toASCII(CHAR16 *InString, UINTN InLength);
-VOID display_colored_text(CHAR16 *string);
-VOID display_error_text(CHAR16 *string);
+VOID DisplayColoredText(CHAR16 *string);
+VOID DisplayErrorText(CHAR16 *string);
 
 #endif
