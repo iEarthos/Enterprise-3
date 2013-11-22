@@ -30,9 +30,9 @@ static const EFI_GUID grub_variable_guid = {0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
-static VOID ReadConfigurationFile(const CHAR16 *name);
-static CHAR8* KernelLocationForDistributionName(const CHAR8 *name);
-static CHAR8* InitRDLocationForDistributionName(const CHAR8 *name);
+static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name);
+static CHAR8* KernelLocationForDistributionName(CHAR8 *name);
+static CHAR8* InitRDLocationForDistributionName(CHAR8 *name);
 static EFI_STATUS console_text_mode(VOID);
 
 static EFI_LOADED_IMAGE *this_image = NULL;
@@ -109,7 +109,13 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	
 	//CHAR8 *sized_str = (CHAR8 *)L"nomodeset";
 	CHAR8 *sized_str = UTF16toASCII(params, StrLen(params) + 1);
-	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str, sizeof(sized_str) * strlena(sized_str) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str, sizeof(sized_str[0]) * strlena(sized_str) + 1, FALSE);
+	
+	LinuxBootOption *boot_params = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
+	CHAR8 *kernel_path = boot_params->kernel_path;
+	CHAR8 *initrd_path = boot_params->initrd_path;
+	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxKernelPath", kernel_path, sizeof(kernel_path[0]) * strlena(kernel_path) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_InitRDPath", initrd_path, sizeof(initrd_path[0]) * strlena(initrd_path) + 1, FALSE);
 	
 	// Load the EFI boot loader image into memory.
 	path = FileDevicePath(this_image->DeviceHandle, L"\\efi\\boot\\boot.efi");
@@ -138,7 +144,7 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	return EFI_SUCCESS;
 }
 
-static VOID ReadConfigurationFile(const CHAR16 *name) {
+static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	LinuxBootOption *boot_options = AllocateZeroPool(sizeof(LinuxBootOption));
 	
 	CHAR8 *contents;
@@ -148,22 +154,41 @@ static VOID ReadConfigurationFile(const CHAR16 *name) {
 	}
 	
 	UINTN position = 0;
-	CHAR8 *key, *value;
+	CHAR8 *key, *value, *distribution;
 	while ((GetConfigurationKeyAndValue(contents, &position, &key, &value))) {
-		if (strcmpa((CHAR8 *)"kernel", key) == 0) {
-			boot_options->kernel_path = KernelLocationForDistributionName(value);
-		} else if (strcmpa((CHAR8 *)"inird", key) == 0) {
-			boot_options->initrd_path = InitRDLocationForDistributionName(value);
-		}
+		// All that is needed is to 
+		if (strcmpa((CHAR8 *)"distribution", key) == 0) {
+			distribution = value;
+			boot_options->kernel_path = KernelLocationForDistributionName(distribution);
+			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
+		} else if (strcmpa((CHAR8 *)"kernel", key) == 0) {
+        	boot_options->kernel_path = value;
+        } else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
+        	boot_options->initrd_path = value;
+        }
+	}
+	
+	return boot_options;
+}
+
+static CHAR8* KernelLocationForDistributionName(CHAR8 *name) {
+	if (strcmpa((CHAR8 *)"Tails", name) == 0) {
+		return (CHAR8 *)"/live/vmlinuz";
+	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
+		return (CHAR8 *)"/casper/vmlinuz";
+	} else {
+		return (CHAR8 *)"";
 	}
 }
 
-static CHAR8* KernelLocationForDistributionName(const CHAR8 *name) {
-	return (CHAR8 *)"";
-}
-
-static CHAR8* InitRDLocationForDistributionName(const CHAR8 *name) {
-	return (CHAR8 *)"";
+static CHAR8* InitRDLocationForDistributionName(CHAR8 *name) {
+	if (strcmpa((CHAR8 *)"Tails", name) == 0) {
+		return (CHAR8 *)"/live/initrd.img";
+	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
+		return (CHAR8 *)"/casper/initrd.lz";
+	} else {
+		return (CHAR8 *)"";
+	}
 }
 
 static EFI_STATUS console_text_mode(VOID) {

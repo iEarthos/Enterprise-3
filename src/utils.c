@@ -130,7 +130,7 @@ out:
 	return len;
 }
 
-// From gummiboot. Thanks, guys!
+// This code has been adapted from gummiboot. Thanks, guys!
 static CHAR8 *strchra(CHAR8 *s, CHAR8 c) {
 	do {
 		if (*s == c) {
