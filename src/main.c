@@ -48,8 +48,8 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	
 	InitializeLib(image_handle, systab); // Initialize EFI.
 	console_text_mode(); // Put the console into text mode. If we don't do that, the image of the Apple
-						 // boot manager will remain on the screen and the user won't see any output
-						 // from the program.
+						// boot manager will remain on the screen and the user won't see any output
+						// from the program.
 	global_image = image_handle;
 	
 	err = uefi_call_wrapper(BS->HandleProtocol, 3, image_handle, &LoadedImageProtocol, (void *)&this_image);
@@ -60,11 +60,11 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	}
 	
 	root_dir = LibOpenRoot(this_image->DeviceHandle);
-    if (!root_dir) {
+	if (!root_dir) {
 		Print(L"Unable to open root directory.\n");
 		uefi_call_wrapper(BS->Stall, 1, 3 * 1000 * 1000);
 		return EFI_LOAD_ERROR;
-    }
+	}
 	
 	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK); // Set the text color.
 	uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut); // Clear the screen.
@@ -156,16 +156,19 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	UINTN position = 0;
 	CHAR8 *key, *value, *distribution;
 	while ((GetConfigurationKeyAndValue(contents, &position, &key, &value))) {
-		// All that is needed is to 
+		// All that is needed is to specify the distribution that will be loaded.
+		// If it's supported, we'll have its info here.
+		// But you can also manually override the kernel and initrd paths by
+		// specifying them.
 		if (strcmpa((CHAR8 *)"distribution", key) == 0) {
 			distribution = value;
 			boot_options->kernel_path = KernelLocationForDistributionName(distribution);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
 		} else if (strcmpa((CHAR8 *)"kernel", key) == 0) {
-        	boot_options->kernel_path = value;
-        } else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
-        	boot_options->initrd_path = value;
-        }
+			boot_options->kernel_path = value;
+		} else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
+			boot_options->initrd_path = value;
+		}
 	}
 	
 	return boot_options;
