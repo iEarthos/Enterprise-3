@@ -160,7 +160,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 		// If it's supported, we'll have its info here.
 		// But you can also manually override the kernel and initrd paths by
 		// specifying them.
-		if (strcmpa((CHAR8 *)"distribution", key) == 0) {
+		if (strcmpa((CHAR8 *)"family", key) == 0) {
 			distribution = value;
 			boot_options->kernel_path = KernelLocationForDistributionName(distribution);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
@@ -168,6 +168,8 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 			boot_options->kernel_path = value;
 		} else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
 			boot_options->initrd_path = value;
+		} else {
+			Print(L"Unrecognized configuration option: %s", ASCIItoUTF16(key, strlena(key)));
 		}
 	}
 	
@@ -185,7 +187,7 @@ static CHAR8* KernelLocationForDistributionName(CHAR8 *name) {
 }
 
 static CHAR8* InitRDLocationForDistributionName(CHAR8 *name) {
-	if (strcmpa((CHAR8 *)"Tails", name) == 0) {
+	if (strcmpa((CHAR8 *)"Debian", name) == 0) {
 		return (CHAR8 *)"/live/initrd.img";
 	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
 		return (CHAR8 *)"/casper/initrd.lz";

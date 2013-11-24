@@ -23,6 +23,9 @@
 
 static CHAR8* strchra(CHAR8 *s, CHAR8 c);
 
+#ifdef __APPLE__
+	#pragma mark - Get/Set/Delete EFI variables
+#endif
 EFI_STATUS efi_set_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 *buf, UINTN size, BOOLEAN persistent) {
 	UINT32 flags;
 	
@@ -32,6 +35,14 @@ EFI_STATUS efi_set_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 *buf, UI
 	}
 	
 	return uefi_call_wrapper(RT->SetVariable, 5, name, (EFI_GUID *)vendor, flags, size, buf);
+}
+
+EFI_STATUS efi_delete_variable(const EFI_GUID *vendor, CHAR16 *name) {
+	UINT32 flags;
+	UINTN size = 0;
+	
+	flags = EFI_VARIABLE_BOOTSERVICE_ACCESS|EFI_VARIABLE_RUNTIME_ACCESS;
+	return uefi_call_wrapper(RT->SetVariable, 5, name, (EFI_GUID *)vendor, flags, size, NULL);
 }
 
 EFI_STATUS efi_get_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 **buffer, UINTN *size) {
@@ -58,6 +69,9 @@ EFI_STATUS efi_get_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 **buffer
 	return err;
 }
 
+#ifdef __APPLE__
+	#pragma mark - Text output functions
+#endif
 VOID DisplayColoredText(CHAR16 *string) {
 	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_YELLOW|EFI_BACKGROUND_BLACK);
 	Print(string);
@@ -70,6 +84,9 @@ VOID DisplayErrorText(CHAR16 *string) {
 	uefi_call_wrapper(ST->ConOut->SetAttribute, 2, ST->ConOut, EFI_LIGHTGRAY|EFI_BACKGROUND_BLACK);
 }
 
+#ifdef __APPLE__
+	#pragma mark - Character conversion functions missing from GNU-EFI
+#endif
 CHAR8* UTF16toASCII(CHAR16 *InString, UINTN InLength) {
 	CHAR8 *OutString, *InAs8;
 	UINTN i = 0;
@@ -81,6 +98,27 @@ CHAR8* UTF16toASCII(CHAR16 *InString, UINTN InLength) {
 		i++;
 	}
 	return OutString;
+}
+
+CHAR16* ASCIItoUTF16(CHAR8 *InString, UINTN InLength) {
+	UINTN strlen = 0, i = 0;
+	CHAR16 *str;
+
+	str = AllocatePool((InLength + 1) * sizeof(CHAR16));
+	while (i < InLength) {
+		INTN utf8len;
+
+		utf8len = NarrowToLongCharConvert(InString + i, str + strlen);
+		if (utf8len <= 0) {
+			i++;
+			continue;
+		}
+
+		strlen++;
+		i += utf8len;
+	}
+	str[strlen] = '\0';
+	return str;
 }
 
 BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name) {
@@ -127,6 +165,61 @@ UINTN FileRead(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content) {
 	FreePool(info);
 	uefi_call_wrapper(handle->Close, 1, handle);
 out:
+	return len;
+}
+
+INTN NarrowToLongCharConvert(CHAR8 *InString, CHAR16 *c) {
+	CHAR16 unichar;
+	UINTN len;
+	UINTN i;
+
+	if (InString[0] < 0x80) {
+		len = 1;
+	} else if ((InString[0] & 0xe0) == 0xc0) {
+		len = 2;
+	} else if ((InString[0] & 0xf0) == 0xe0) {
+		len = 3;
+	} else if ((InString[0] & 0xf8) == 0xf0) {
+		len = 4;
+	} else if ((InString[0] & 0xfc) == 0xf8) {
+		len = 5;
+	} else if ((InString[0] & 0xfe) == 0xfc) {
+		len = 6;
+	} else {
+		return -1;
+	}
+
+	switch (len) {
+		case 1:
+                unichar = InString[0];
+                break;
+		case 2:
+                unichar = InString[0] & 0x1f;
+                break;
+		case 3:
+                unichar = InString[0] & 0x0f;
+                break;
+		case 4:
+                unichar = InString[0] & 0x07;
+                break;
+		case 5:
+                unichar = InString[0] & 0x03;
+                break;
+		case 6:
+                unichar = InString[0] & 0x01;
+                break;
+	}
+
+	for (i = 1; i < len; i++) {
+		if ((InString[i] & 0xc0) != 0x80) {
+			return -1;
+		}
+		
+		unichar <<= 6;
+		unichar |= InString[i] & 0x3f;
+	}
+
+	*c = unichar;
 	return len;
 }
 
