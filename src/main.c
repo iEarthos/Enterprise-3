@@ -40,8 +40,6 @@ static EFI_FILE *root_dir;
 
 static EFI_HANDLE global_image;
 
-EFI_DEVICE_PATH *first_new_option = NULL; // The path to the GRUB image we want to load.
-
 /* entry function for EFI */
 EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	EFI_STATUS err; // Define an error variable.

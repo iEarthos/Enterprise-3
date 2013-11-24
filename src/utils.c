@@ -121,53 +121,6 @@ CHAR16* ASCIItoUTF16(CHAR8 *InString, UINTN InLength) {
 	return str;
 }
 
-BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name) {
-	EFI_FILE_HANDLE handle;
-	EFI_STATUS err;
-
-	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, NULL);
-	if (EFI_ERROR(err)) {
-		goto out;
-	}
-
-	uefi_call_wrapper(handle->Close, 1, handle);
-	return TRUE;
-out:
-	return FALSE;
-}
-
-UINTN FileRead(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content) {
-	EFI_FILE_HANDLE handle;
-	EFI_FILE_INFO *info;
-	CHAR8 *buf;
-	UINTN buflen;
-	EFI_STATUS err;
-	UINTN len = 0;
-	
-	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, NULL);
-	if (EFI_ERROR(err)) {
-		goto out;
-	}
-	
-	info = LibFileInfo(handle);
-	buflen = info->FileSize+1;
-	buf = AllocatePool(buflen);
-	
-	err = uefi_call_wrapper(handle->Read, 3, handle, &buflen, buf);
-	if (EFI_ERROR(err) == EFI_SUCCESS) {
-		buf[buflen] = '\0';
-		*content = buf;
-		len = buflen;
-	} else {
-		FreePool(buf);
-	}
-	
-	FreePool(info);
-	uefi_call_wrapper(handle->Close, 1, handle);
-out:
-	return len;
-}
-
 INTN NarrowToLongCharConvert(CHAR8 *InString, CHAR16 *c) {
 	CHAR16 unichar;
 	UINTN len;
@@ -220,6 +173,56 @@ INTN NarrowToLongCharConvert(CHAR8 *InString, CHAR16 *c) {
 	}
 
 	*c = unichar;
+	return len;
+}
+
+BOOLEAN FileExists(EFI_FILE_HANDLE dir, CHAR16 *name) {
+	EFI_FILE_HANDLE handle;
+	EFI_STATUS err;
+
+	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, NULL);
+	if (EFI_ERROR(err)) {
+		goto out;
+	}
+
+	uefi_call_wrapper(handle->Close, 1, handle);
+	return TRUE;
+out:
+	return FALSE;
+}
+
+#ifdef __APPLE__
+	#pragma mark - Functions for reading and parsing config files.
+#endif
+UINTN FileRead(EFI_FILE_HANDLE dir, const CHAR16 *name, CHAR8 **content) {
+	EFI_FILE_HANDLE handle;
+	EFI_FILE_INFO *info;
+	CHAR8 *buf;
+	UINTN buflen;
+	EFI_STATUS err;
+	UINTN len = 0;
+	
+	err = uefi_call_wrapper(dir->Open, 5, dir, &handle, name, EFI_FILE_MODE_READ, NULL);
+	if (EFI_ERROR(err)) {
+		goto out;
+	}
+	
+	info = LibFileInfo(handle);
+	buflen = info->FileSize+1;
+	buf = AllocatePool(buflen);
+	
+	err = uefi_call_wrapper(handle->Read, 3, handle, &buflen, buf);
+	if (EFI_ERROR(err) == EFI_SUCCESS) {
+		buf[buflen] = '\0';
+		*content = buf;
+		len = buflen;
+	} else {
+		FreePool(buf);
+	}
+	
+	FreePool(info);
+	uefi_call_wrapper(handle->Close, 1, handle);
+out:
 	return len;
 }
 
