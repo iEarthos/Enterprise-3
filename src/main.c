@@ -107,13 +107,16 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	
 	//CHAR8 *sized_str = (CHAR8 *)L"nomodeset";
 	CHAR8 *sized_str = UTF16toASCII(params, StrLen(params) + 1);
-	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str, sizeof(sized_str[0]) * strlena(sized_str) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str,
+		sizeof(sized_str[0]) * strlena(sized_str) + 1, FALSE);
 	
 	LinuxBootOption *boot_params = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
 	CHAR8 *kernel_path = boot_params->kernel_path;
 	CHAR8 *initrd_path = boot_params->initrd_path;
-	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxKernelPath", kernel_path, sizeof(kernel_path[0]) * strlena(kernel_path) + 1, FALSE);
-	efi_set_variable(&grub_variable_guid, L"Enterprise_InitRDPath", initrd_path, sizeof(initrd_path[0]) * strlena(initrd_path) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxKernelPath", kernel_path,
+		sizeof(kernel_path[0]) * strlena(kernel_path) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_InitRDPath", initrd_path,
+		sizeof(initrd_path[0]) * strlena(initrd_path) + 1, FALSE);
 	
 	// Load the EFI boot loader image into memory.
 	path = FileDevicePath(this_image->DeviceHandle, L"\\efi\\boot\\boot.efi");
@@ -154,14 +157,24 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	UINTN position = 0;
 	CHAR8 *key, *value, *distribution;
 	while ((GetConfigurationKeyAndValue(contents, &position, &key, &value))) {
-		// All that is needed is to specify the distribution that will be loaded.
-		// If it's supported, we'll have its info here.
-		// But you can also manually override the kernel and initrd paths by
-		// specifying them.
+		/* 
+		 * All that is needed is to specify the distribution that will be loaded.
+		 * If it's supported, we'll have its info here.
+		 * But you can also manually override the kernel and initrd paths by
+		 * specifying them.
+		 */
+		// The user has given us a distribution family.
 		if (strcmpa((CHAR8 *)"family", key) == 0) {
 			distribution = value;
 			boot_options->kernel_path = KernelLocationForDistributionName(distribution);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
+			// If either of the paths are a blank string, then you've got an
+			// unsupported distribution or a typo of the distribution name.
+			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||
+				strcmpa((CHAR8 *)"", boot_options->initrd_path) == 0) {
+				Print(L"Distribution family %s is not supported.", ASCIItoUTF16(value, strlena(value)));
+			}
+		// The user is manually specifying information; override any previous values.
 		} else if (strcmpa((CHAR8 *)"kernel", key) == 0) {
 			boot_options->kernel_path = value;
 		} else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
@@ -175,7 +188,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 }
 
 static CHAR8* KernelLocationForDistributionName(CHAR8 *name) {
-	if (strcmpa((CHAR8 *)"Tails", name) == 0) {
+	if (strcmpa((CHAR8 *)"Debian", name) == 0) {
 		return (CHAR8 *)"/live/vmlinuz";
 	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
 		return (CHAR8 *)"/casper/vmlinuz";

@@ -111,10 +111,11 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 
 	/* wait until key is pressed */
 	if (wait) {
-		if (TextInputEx)
+		if (TextInputEx) {
 			uefi_call_wrapper(BS->WaitForEvent, 3, 1, &TextInputEx->WaitForKeyEx, &index);
-		else
+		} else {
 			uefi_call_wrapper(BS->WaitForEvent, 3, 1, &ST->ConIn->WaitForKey, &index);
+		}
 	}
 
 	if (TextInputEx) {
