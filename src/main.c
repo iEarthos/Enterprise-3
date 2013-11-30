@@ -74,19 +74,22 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	
 	// Check to make sure that we have our configuration file and GRUB bootloader.
 	if (!FileExists(root_dir, L"\\efi\\boot\\.MLUL-Live-USB")) {
-		 DisplayErrorText(L"Error: can't find configuration file.\n");
+		DisplayErrorText(L"Error: can't find configuration file.\n");
 	} else {
-		ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
+		LinuxBootOption *result = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
+		if (!result) {
+			can_continue = FALSE;
+		}
 	}
 	
 	if (!FileExists(root_dir, L"\\efi\\boot\\boot.efi")) {
-		 DisplayErrorText(L"Error: can't find GRUB bootloader!.\n");
-		 can_continue = FALSE;
+		DisplayErrorText(L"Error: can't find GRUB bootloader!.\n");
+		can_continue = FALSE;
 	}
 	
 	if (!FileExists(root_dir, L"\\efi\\boot\\boot.iso")) {
-		 DisplayErrorText(L"Error: can't find ISO file to boot!.\n");
-		 can_continue = FALSE;
+		DisplayErrorText(L"Error: can't find ISO file to boot!.\n");
+		can_continue = FALSE;
 	}
 	
 	// Display the menu where the user can select what they want to do.
@@ -189,6 +192,8 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 			boot_options->kernel_path = value;
 		} else if (strcmpa((CHAR8 *)"initrd", key) == 0) {
 			boot_options->initrd_path = value;
+		} else if (strcmpa((CHAR8 *)"root", key) == 0) { 
+			boot_options->boot_folder = value;
 		} else {
 			Print(L"Unrecognized configuration option: %s", ASCIItoUTF16(key, strlena(key)));
 		}
