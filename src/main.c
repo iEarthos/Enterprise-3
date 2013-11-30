@@ -31,7 +31,7 @@ static const EFI_GUID grub_variable_guid = {0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0
 #define VERSION_MINOR 1
 
 static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name);
-static CHAR8* KernelLocationForDistributionName(CHAR8 *name);
+static CHAR8* KernelLocationForDistributionName(CHAR8 *name, CHAR8 **boot_folder);
 static CHAR8* InitRDLocationForDistributionName(CHAR8 *name);
 static EFI_STATUS console_text_mode(VOID);
 
@@ -117,10 +117,13 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	
 	CHAR8 *kernel_path = boot_params->kernel_path;
 	CHAR8 *initrd_path = boot_params->initrd_path;
+	CHAR8 *boot_folder = boot_params->boot_folder;
 	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxKernelPath", kernel_path,
 		sizeof(kernel_path[0]) * strlena(kernel_path) + 1, FALSE);
 	efi_set_variable(&grub_variable_guid, L"Enterprise_InitRDPath", initrd_path,
 		sizeof(initrd_path[0]) * strlena(initrd_path) + 1, FALSE);
+	efi_set_variable(&grub_variable_guid, L"Enterprise_BootFolder", boot_folder,
+		sizeof(boot_folder[0]) * strlena(boot_folder) + 1, FALSE);
 	
 	// Load the EFI boot loader image into memory.
 	path = FileDevicePath(this_image->DeviceHandle, L"\\efi\\boot\\boot.efi");
@@ -159,7 +162,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	}
 	
 	UINTN position = 0;
-	CHAR8 *key, *value, *distribution;
+	CHAR8 *key, *value, *distribution, *boot_folder;
 	while ((GetConfigurationKeyAndValue(contents, &position, &key, &value))) {
 		/* 
 		 * All that is needed is to specify the distribution that will be loaded.
@@ -170,8 +173,10 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 		// The user has given us a distribution family.
 		if (strcmpa((CHAR8 *)"family", key) == 0) {
 			distribution = value;
-			boot_options->kernel_path = KernelLocationForDistributionName(distribution);
+			boot_options->kernel_path = KernelLocationForDistributionName(distribution, &boot_folder);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
+			boot_options->boot_folder = boot_folder;
+			Print(L"Boot folder: %s", ASCIItoUTF16(boot_folder, strlena(boot_folder)));
 			// If either of the paths are a blank string, then you've got an
 			// unsupported distribution or a typo of the distribution name.
 			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||
@@ -192,10 +197,12 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	return boot_options;
 }
 
-static CHAR8* KernelLocationForDistributionName(CHAR8 *name) {
+static CHAR8* KernelLocationForDistributionName(CHAR8 *name, CHAR8 **boot_folder) {
 	if (strcmpa((CHAR8 *)"Debian", name) == 0) {
+		*boot_folder = (CHAR8 *)"live";
 		return (CHAR8 *)"/live/vmlinuz";
 	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
+		*boot_folder = (CHAR8 *)"casper";
 		return (CHAR8 *)"/casper/vmlinuz";
 	} else {
 		return (CHAR8 *)"";
