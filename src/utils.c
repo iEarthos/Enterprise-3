@@ -47,20 +47,20 @@ EFI_STATUS efi_delete_variable(const EFI_GUID *vendor, CHAR16 *name) {
 
 EFI_STATUS efi_get_variable(const EFI_GUID *vendor, CHAR16 *name, CHAR8 **buffer, UINTN *size) {
 	CHAR8 *buf;
-	UINTN l;
+	UINTN length;
 	EFI_STATUS err;
 
-	l = sizeof(CHAR16 *) * EFI_MAXIMUM_VARIABLE_SIZE;
-	buf = AllocatePool(l);
+	length = sizeof(CHAR16 *) * EFI_MAXIMUM_VARIABLE_SIZE;
+	buf = AllocatePool(length);
 	if (!buf) {
 		return EFI_OUT_OF_RESOURCES;
 	}
 
-	err = uefi_call_wrapper(RT->GetVariable, 5, name, (EFI_GUID *)vendor, NULL, &l, buf);
+	err = uefi_call_wrapper(RT->GetVariable, 5, name, (EFI_GUID *)vendor, NULL, &length, buf);
 	if (!EFI_ERROR(err)) {
 		*buffer = buf;
 		if (size) {
-			*size = l;
+			*size = length;
 		}
 	} else {
 		FreePool(buf);
@@ -144,23 +144,23 @@ INTN NarrowToLongCharConvert(CHAR8 *InString, CHAR16 *c) {
 
 	switch (len) {
 		case 1:
-                unichar = InString[0];
-                break;
+			unichar = InString[0];
+			break;
 		case 2:
-                unichar = InString[0] & 0x1f;
-                break;
+			unichar = InString[0] & 0x1f;
+			break;
 		case 3:
-                unichar = InString[0] & 0x0f;
-                break;
+			unichar = InString[0] & 0x0f;
+			break;
 		case 4:
-                unichar = InString[0] & 0x07;
-                break;
+			unichar = InString[0] & 0x07;
+			break;
 		case 5:
-                unichar = InString[0] & 0x03;
-                break;
+			unichar = InString[0] & 0x03;
+			break;
 		case 6:
-                unichar = InString[0] & 0x01;
-                break;
+			unichar = InString[0] & 0x01;
+			break;
 	}
 
 	for (i = 1; i < len; i++) {

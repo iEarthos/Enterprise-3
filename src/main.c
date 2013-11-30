@@ -71,12 +71,13 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 	uefi_call_wrapper(ST->ConOut->EnableCursor, 2, ST->ConOut, FALSE); // Disable display of the cursor.
 	
 	BOOLEAN can_continue = TRUE;
+	LinuxBootOption *result;
 	
 	// Check to make sure that we have our configuration file and GRUB bootloader.
 	if (!FileExists(root_dir, L"\\efi\\boot\\.MLUL-Live-USB")) {
 		DisplayErrorText(L"Error: can't find configuration file.\n");
 	} else {
-		LinuxBootOption *result = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
+		result = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
 		if (!result) {
 			can_continue = FALSE;
 		}
@@ -92,12 +93,22 @@ EFI_STATUS efi_main(EFI_HANDLE image_handle, EFI_SYSTEM_TABLE *systab) {
 		can_continue = FALSE;
 	}
 	
+	// Check if there is a persistence file present.
+	// TODO: Support distributions other than Ubuntu.
+	if (FileExists(root_dir, L"\\casper-rw") &&
+		strcmpa((CHAR8 *)"Ubuntu", result->distro_family) == 0 &&
+		can_continue) {
+		DisplayColoredText(L"Found a persistence file! You can enable persistence by " \
+							"selecting it in the Modify Boot Settings screen.\n");
+	}
+	
 	// Display the menu where the user can select what they want to do.
 	if (can_continue) {
 		DisplayMenu();
 	} else {
 		Print(L"Cannot continue because core files are missing. Restarting...\n");
 		uefi_call_wrapper(BS->Stall, 1, 1000 * 1000);
+		return EFI_LOAD_ERROR;
 	}
 	
 	return EFI_SUCCESS;
@@ -178,10 +189,11 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 		// The user has given us a distribution family.
 		if (strcmpa((CHAR8 *)"family", key) == 0) {
 			distribution = value;
+			boot_options->distro_family = value;
 			boot_options->kernel_path = KernelLocationForDistributionName(distribution, &boot_folder);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
 			boot_options->boot_folder = boot_folder;
-			Print(L"Boot folder: %s", ASCIItoUTF16(boot_folder, strlena(boot_folder)));
+			Print(L"Boot folder: %s\n", ASCIItoUTF16(boot_folder, strlena(boot_folder)));
 			// If either of the paths are a blank string, then you've got an
 			// unsupported distribution or a typo of the distribution name.
 			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||

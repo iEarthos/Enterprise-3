@@ -145,7 +145,7 @@ static EFI_STATUS key_read(UINT64 *key, BOOLEAN wait) {
 		}
 	}
 
-	/* fallback for firmware which does not support SimpleTextInputExProtocol
+	/* Fallback for firmware which does not support SimpleTextInputExProtocol.
 	 *
 	 * This is also called in case ReadKeyStrokeEx did not return a key, because
 	 * some broken firmwares offer SimpleTextInputExProtocol, but never acually
@@ -191,7 +191,7 @@ EFI_STATUS DisplayMenu(void) {
 	return EFI_SUCCESS;
 }
 
-int options_array[20];
+static int options_array[20];
 
 #define OPTION(string, id) \
 	if (options_array[id]) { \
@@ -219,6 +219,7 @@ EFI_STATUS ConfigureKernel(CHAR16 *options) {
 		OPTION(L"\n    2) acpi=off - Disable ACPI.", 1);
 		OPTION(L"\n    3) noefi - Disable EFI runtime services support.", 2);
 		OPTION(L"\n    4) vga=ask - Show a menu of supported video modes.", 3);
+		OPTION(L"\n    5) persistent - Make any changes to the flash storage persist.", 4);
 		OPTION(L"\n    9) gpt - Forces disk with valid GPT signature but invalid Protective MBR" \
 				" to be treated as GPT (useful for installing Linux on a Mac drive).", 8);
 		Print(L"\n\n    0) Boot with selected options.\n");
@@ -249,6 +250,10 @@ EFI_STATUS ConfigureKernel(CHAR16 *options) {
 	
 	if (options_array[3]) {
 		StrCat(options, L"vga=ask ");
+	}
+	
+	if (options_array[4]) {
+		StrCat(options, L"persistent ");
 	}
 	
 	if (options_array[8]) {

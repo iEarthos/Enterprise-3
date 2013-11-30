@@ -21,9 +21,10 @@
 #define _main_h
 
 typedef struct LinuxBootOption {
-   CHAR8 *kernel_path;
-   CHAR8 *initrd_path;
-   CHAR8 *boot_folder;
+	CHAR8 *distro_family;
+	CHAR8 *kernel_path;
+	CHAR8 *initrd_path;
+	CHAR8 *boot_folder;
 } LinuxBootOption;
 
 EFI_STATUS BootLinuxWithOptions(CHAR16 *params);
