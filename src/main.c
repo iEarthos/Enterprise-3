@@ -105,12 +105,16 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	EFI_HANDLE image;
 	EFI_DEVICE_PATH *path;
 	
-	//CHAR8 *sized_str = (CHAR8 *)L"nomodeset";
 	CHAR8 *sized_str = UTF16toASCII(params, StrLen(params) + 1);
 	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxBootOptions", sized_str,
 		sizeof(sized_str[0]) * strlena(sized_str) + 1, FALSE);
 	
 	LinuxBootOption *boot_params = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
+	if (!boot_params) {
+		DisplayErrorText(L"Error: invalid distribution name specified.");
+		return EFI_LOAD_ERROR;
+	}
+	
 	CHAR8 *kernel_path = boot_params->kernel_path;
 	CHAR8 *initrd_path = boot_params->initrd_path;
 	efi_set_variable(&grub_variable_guid, L"Enterprise_LinuxKernelPath", kernel_path,
@@ -173,6 +177,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||
 				strcmpa((CHAR8 *)"", boot_options->initrd_path) == 0) {
 				Print(L"Distribution family %s is not supported.", ASCIItoUTF16(value, strlena(value)));
+				return NULL;
 			}
 		// The user is manually specifying information; override any previous values.
 		} else if (strcmpa((CHAR8 *)"kernel", key) == 0) {
