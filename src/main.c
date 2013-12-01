@@ -125,7 +125,7 @@ EFI_STATUS BootLinuxWithOptions(CHAR16 *params) {
 	
 	LinuxBootOption *boot_params = ReadConfigurationFile(L"\\efi\\boot\\.MLUL-Live-USB");
 	if (!boot_params) {
-		DisplayErrorText(L"Error: invalid distribution name specified.");
+		DisplayErrorText(L"Error: invalid distribution name specified.\n");
 		return EFI_LOAD_ERROR;
 	}
 	
@@ -174,7 +174,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 	CHAR8 *contents;
 	UINTN read_bytes = FileRead(root_dir, name, &contents);
 	if (read_bytes == 0) {
-		DisplayErrorText(L"Error: Couldn't read configuration information.");
+		DisplayErrorText(L"Error: Couldn't read configuration information.\n");
 	}
 	
 	UINTN position = 0;
@@ -198,7 +198,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 			// unsupported distribution or a typo of the distribution name.
 			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||
 				strcmpa((CHAR8 *)"", boot_options->initrd_path) == 0) {
-				Print(L"Distribution family %s is not supported.", ASCIItoUTF16(value, strlena(value)));
+				Print(L"Distribution family %s is not supported.\n", ASCIItoUTF16(value, strlena(value)));
 				
 				FreePool(boot_options);
 				return NULL;
@@ -211,7 +211,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 		} else if (strcmpa((CHAR8 *)"root", key) == 0) { 
 			boot_options->boot_folder = value;
 		} else {
-			Print(L"Unrecognized configuration option: %s", ASCIItoUTF16(key, strlena(key)));
+			Print(L"Unrecognized configuration option: %s\n", ASCIItoUTF16(key, strlena(key)));
 		}
 	}
 	
