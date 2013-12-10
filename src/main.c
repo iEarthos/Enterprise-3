@@ -193,7 +193,7 @@ static LinuxBootOption* ReadConfigurationFile(const CHAR16 *name) {
 			boot_options->kernel_path = KernelLocationForDistributionName(distribution, &boot_folder);
 			boot_options->initrd_path = InitRDLocationForDistributionName(distribution);
 			boot_options->boot_folder = boot_folder;
-			Print(L"Boot folder: %s\n", ASCIItoUTF16(boot_folder, strlena(boot_folder)));
+			//Print(L"Boot folder: %s\n", ASCIItoUTF16(boot_folder, strlena(boot_folder)));
 			// If either of the paths are a blank string, then you've got an
 			// unsupported distribution or a typo of the distribution name.
 			if (strcmpa((CHAR8 *)"", boot_options->kernel_path) == 0 ||
