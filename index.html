@@ -1,18 +1,36 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<link rel="stylesheet" href="css/main.css">
-<title>Enterprise: EFI Linux Loader</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="css/main.css">
+	<link rel="stylesheet" href="https://cdn.moot.it/1/moot.css">
+	<link href='http://fonts.googleapis.com/css?family=Gilda+Display' rel='stylesheet' type='text/css'>	
+	<title>Enterprise: EFI Linux Loader</title>
 </head>
-	<h1>Enterprise: EFI Linux Loader</h1>
-    <h3>A Slightly Pompous Attempt to Boot Linux on Intel Macs</h3>
-    
-    <p>Enterprise (named after the Starship Enterprise from <i>Star Trek</i>), is an EFI program that is designed to assist in loading
-     Linux distributions on USB sticks on Intel Macs, something that is continously regarded as being near to impossible due to 
-     EFI quirks.</p>
-     <p>The program is quite unique. It is written in <a href="http://en.wikipedia.org/wiki/C_(programming_language)" target="_blank">C</a>,
-     and will be compiled to run on both 32-bit and 64-bit EFI firmware types.</p>
 <body>
+	<!--<div id="paneSwitcher">
+		<a href="javascript:$('#moot').hide();$('#mainContent').show();">Main Page</a> | 
+		<a href="javascript:$('#moot').show();$('#mainContent').hide();">Moot</a>
+	</div>-->
+	<div id="mainContent">
+		<a href="https://github.com/SevenBits/Enterprise" target="_blank"><img style="position:absolute;top:0;right:0;border:0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
+		<h1>Enterprise: EFI Linux Loader</h1>
+    	<h3>A Slightly Pompous Attempt to Boot Linux on Intel Macs</h3>
+    
+    	<p>Enterprise (named after the Starship Enterprise from <i>Star Trek</i>), is an EFI program that is designed to assist in loading Linux distributions on USB sticks on Intel Macs, something that is continously regarded as being near to impossible due to EFI quirks.</p>
+    	<p>The program is quite unique. It is written in <a href="http://en.wikipedia.org/wiki/C_(programming_language)" target="_blank">C</a>, and will be compiled to run on both 32-bit and 64-bit EFI firmware types. More information coming shortly!</p>
+		<p>It is designed to compliment <a href="http://sevenbits.github.io/Mac-Linux-USB-Loader/" target="_blank">Mac Linux USB Loader</a>, though it can also be used separately (albeit with some setup work). The purpose of Enterprise is as the first stage in a two-stage booting process for Mac Linux USB Loader-created USB drives.</p>
+		<div class='gh-star'>
+  			<!-- Share -->
+  			<iframe src="http://ghbtns.com/github-btn.html?user=sevenbits&repo=enterprise&type=watch&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="150" height="50"></iframe>
+		</div>
+	</div>
+	<div id="moot">
+		<a class="moot" href="https://moot.it/i/enterprise-linux-uefi">enterprise-linux-uefi forums</a>
+	</div>
 </body>
+<script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script src="https://cdn.moot.it/1/moot.min.js"></script>
 </html>
