@@ -10,12 +10,12 @@
 	<title>Enterprise: EFI Linux Loader</title>
 </head>
 <body>
-	<!--<div id="paneSwitcher">
-		<a href="javascript:$('#moot').hide();$('#mainContent').show();">Main Page</a> | 
-		<a href="javascript:$('#moot').show();$('#mainContent').hide();">Moot</a>
-	</div>-->
+	<div id="paneSwitcher">
+		<a href="javascript:$('#moot').slideUp();$('#mainContent').slideDown();">Main Page</a> | 
+		<a href="javascript:$('#moot').slideDown();$('#mainContent').slideUp();">Discussion Board</a>
+	</div>
+	<a href="https://github.com/SevenBits/Enterprise" target="_blank"><img style="position:absolute;top:0;right:0;border:0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
 	<div id="mainContent">
-		<a href="https://github.com/SevenBits/Enterprise" target="_blank"><img style="position:absolute;top:0;right:0;border:0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"></a>
 		<h1>Enterprise: EFI Linux Loader</h1>
     	<h3>A Slightly Pompous Attempt to Boot Linux on Intel Macs</h3>
     
@@ -33,4 +33,9 @@
 </body>
 <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
 <script src="https://cdn.moot.it/1/moot.min.js"></script>
+<script>
+	$('#moot').ready(function() {
+		javascript:$('#moot').slideUp();
+	});
+</script>
 </html>
