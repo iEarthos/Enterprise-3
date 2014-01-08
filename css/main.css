@@ -3,6 +3,7 @@
 html {
 	background-color:#9C9;
 }
+
 body {
 	margin-left:120px;
 	margin-right:120px;
@@ -11,8 +12,29 @@ body {
 	/*font-family:Arial, Helvetica, sans-serif;*/
 	font-family:'Gilda Display', serif;
 }
+
 p {
 	/*font-family:"Times New Roman", Times, serif;*/
 	font-family:'Gilda Display', serif;
 	font-size:20px;
+}
+
+.fork-me {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+}
+
+@media all and (max-width: 1001px) {
+    body {
+        margin-left:12px;
+        margin-right:12px;
+    }
+}
+
+@media all and (max-width: 450px) {
+    html {
+	   background-color: #FFF;
+    }
 }
