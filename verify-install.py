@@ -19,7 +19,9 @@
 from sys import exit
 """ Note: this program assumes that it is being executed from the
  root directory of a USB drive containing an installation of
- Enterprise."""
+ Enterprise.
+
+ 	It verifies syntax and whether all required files are present."""
 def main():
 	"""The program's main method."""
 	installValid = True
@@ -50,6 +52,8 @@ def main():
 		exit(1)
 
 def verifyConfigurationFile(file):
+	"""Verify whether Enterprise's configuration file
+		is valid."""
 	validKeys = ["family", "kernel", "initrd", "root"]
 	verifyIsValid = True
 	if not (fileExists(file)):
@@ -76,6 +80,8 @@ def verifyConfigurationFile(file):
 	return verifyIsValid
 			
 def processConfigLine(line, validKeys):
+	"""Determine whether a configuration file's line starts
+		with valid keys."""
 	command = line.split(' ')[0]
 	message = ""
 	if (command.startswith('#')):
@@ -88,6 +94,7 @@ def processConfigLine(line, validKeys):
 	return value
 
 def fileExists(file):
+	"""Check if a file exists."""
 	try:
 		open(file)
 		return True
