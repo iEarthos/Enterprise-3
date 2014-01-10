@@ -1,4 +1,7 @@
-install:
-	sudo apt-get install gnu-efi
 language: c
-script: ./build.sh
+install: sudo apt-get install gnu-efi
+compiler:
+  - gcc
+  - clang
+# Change this to your needs
+script: ./configure && make
