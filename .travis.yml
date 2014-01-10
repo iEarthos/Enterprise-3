@@ -1,0 +1,4 @@
+install:
+	sudo apt-get install gnu-efi
+language: c
+script: ./build.sh
