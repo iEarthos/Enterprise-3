@@ -1,5 +1,6 @@
 Enterprise
 ==========
+[![Build Status](https://travis-ci.org/SevenBits/Enterprise.png)](https://travis-ci.org/SevenBits/Enterprise)
 
 This source code archive contains code for Enterprise, a custom UEFI bootloader. It is designed to compliment [Mac Linux USB Loader](https://github.com/SevenBits/Mac-Linux-USB-Loader), though it can also be used separately (albeit with some setup work). The purpose of Enterprise is as the first stage in a three-stage booting process for Mac Linux USB Loader-created USB drives. Essentially, Enterprise loads GRUB, giving it a configuration file with things that it needs to successfully boot the Linux distribution on Mac hardware. This is a paradigm shift from my current solution, a pre-compiled GRUB executable with an embedded configuration file, which is outdated, inflexible, and, due to differences in how distributions pack their ISOs, largely unable to boot anything other than Ubuntu derivatives.
 
