@@ -23,4 +23,5 @@ Thumbs.db
 
 # My custom scripts
 install.sh
+build-deps/
 bin/
