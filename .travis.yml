@@ -2,6 +2,5 @@ language: c
 install: ./install-deps.sh
 compiler:
   - gcc
-  - clang
 # Change this to your needs
 script: ./build.sh
