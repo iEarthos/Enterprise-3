@@ -26,10 +26,28 @@ p {
     border: 0;
 }
 
+.left-float {
+    float: left;
+}
+
+.right-float {
+    float: right;
+}
+
+.bottom-tools {
+    clear: both;
+}
+
 @media all and (max-width: 1001px) {
     body {
         margin-left:12px;
         margin-right:12px;
+    }
+}
+
+@media all and (max-width: 720px) {
+    .bottom-tools {
+        clear: none;
     }
 }
 
