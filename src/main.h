@@ -21,6 +21,8 @@
 #define _main_h
 
 typedef struct LinuxBootOption {
+	CHAR8 *name;
+	CHAR8 *file_name;
 	CHAR8 *distro_family;
 	CHAR8 *kernel_path;
 	CHAR8 *initrd_path;
