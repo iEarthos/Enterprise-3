@@ -27,6 +27,11 @@ typedef struct LinuxBootOption {
 	CHAR8 *boot_folder;
 } LinuxBootOption;
 
+typedef struct BootableLinuxDistro {
+	LinuxBootOption *bootOption;
+	struct BootableLinuxDistro *next;
+} BootableLinuxDistro;
+
 EFI_STATUS BootLinuxWithOptions(CHAR16 *params);
 
 #endif
