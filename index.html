@@ -24,8 +24,15 @@
     	<h3>A Slightly Pompous Attempt to Boot Linux on Intel Macs</h3>
     
     	<p>Enterprise (named after the Starship Enterprise from <i>Star Trek</i>), is an EFI program that is designed to assist in loading Linux distributions on USB sticks on Intel Macs, something that is continously regarded as being near to impossible due to EFI quirks.</p>
-    	<p>The program is quite unique. It is written in <a href="http://en.wikipedia.org/wiki/C_(programming_language)" target="_blank">C</a>, and will be compiled to run on both 32-bit and 64-bit EFI firmware types. More information coming shortly!</p>
+    	<p>The program is quite unique. It is written in <a href="http://en.wikipedia.org/wiki/C_(programming_language)" target="_blank">C</a>, and can be compiled to run on both 32-bit and 64-bit EFI firmware types. More information coming shortly!</p>
 		<p>It is designed to compliment <a href="http://sevenbits.github.io/Mac-Linux-USB-Loader/" target="_blank">Mac Linux USB Loader</a>, though it can also be used separately (albeit with some setup work). The purpose of Enterprise is as the first stage in a two-stage booting process for Mac Linux USB Loader-created USB drives.</p>
+        
+        <h4>Installation and Use</h4>
+        
+        <p>Enterprise is intended as a tool to be used alongside Mac Linux USB Loader, and so it is not really intended to be installed in the same manner as one would install a traditional bootloader like GRUB. That being said, it <em>is</em> possible to use Enterprise without Mac Linux USB Loader, as they are wholly separate tools, however in this circumstance additional setup is required.</p>
+        <p>To get the best performance from Enterprise, and to take advantage of any super cool stuff I add to it, you <em>should</em> download the source code, as the official repository includes a number of tools to assist in setup.</p>
+        
+        
         <div class="bottom-tools">
             <!-- Share -->
             <iframe src="http://ghbtns.com/github-btn.html?user=sevenbits&repo=enterprise&type=watch&count=true&size=large" allowtransparency="true" frameborder="0" scrolling="0" width="150" height="50" class="left-float"></iframe>
@@ -40,6 +47,12 @@
 </body>
 <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
 <script src="https://cdn.moot.it/1/moot.min.js"></script>
+<script>
+    function hideAllPanes() {
+        $('#moot').slideUp();
+        $('#mainContent').slideUp();
+    }
+</script>
 <script>
 	$('#moot').ready(function() {
 		javascript:$('#moot').slideUp();
