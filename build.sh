@@ -16,11 +16,10 @@
 # Copyright (C) 2013-2014 SevenBits
 #
 #
-make -C src >> /dev/null # Hide regular build messages, we only want errors.
-mkdir bin >> /dev/null 2> /dev/null # Make a new folder if we need to.
-mv src/enterprise.efi bin/enterprise.efi
-if make -C src clean >> /dev/null
+if make -C src >> /dev/null
 then
+	mkdir bin >> /dev/null 2> /dev/null # Make a new folder if we need to.
+	mv src/enterprise.efi bin/enterprise.efi
 	echo Done building!
 	return 0
 else
