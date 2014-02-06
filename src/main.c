@@ -22,6 +22,7 @@
 #include "main.h"
 #include "menu.h"
 #include "utils.h"
+#include "distribution.h"
 #define banner L"Welcome to Enterprise! - Version %d.%d.%d\n"
 
 static const EFI_GUID enterprise_variable_guid = {0x4a67b082, 0x0a4c, 0x41cf, {0xb6, 0xc7, 0x44, 0x0b, 0x29, 0xbb, 0x8c, 0x4f}};
@@ -32,8 +33,6 @@ static const EFI_GUID grub_variable_guid = {0x8BE4DF61, 0x93CA, 0x11d2, {0xAA, 0
 #define VERSION_PATCH 1
 
 static BootableLinuxDistro* ReadConfigurationFile(const CHAR16 *name);
-static CHAR8* KernelLocationForDistributionName(CHAR8 *name, OUT CHAR8 **boot_folder);
-static CHAR8* InitRDLocationForDistributionName(CHAR8 *name);
 static EFI_STATUS console_text_mode(VOID);
 
 static EFI_LOADED_IMAGE *this_image = NULL;
@@ -239,28 +238,6 @@ static BootableLinuxDistro* ReadConfigurationFile(const CHAR16 *name) {
 	
 	Print(L"Done reading configuration file.\n");
 	return root;
-}
-
-static CHAR8* KernelLocationForDistributionName(CHAR8 *name, OUT CHAR8 **boot_folder) {
-	if (strcmpa((CHAR8 *)"Debian", name) == 0) {
-		*boot_folder = (CHAR8 *)"live";
-		return (CHAR8 *)"/live/vmlinuz";
-	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
-		*boot_folder = (CHAR8 *)"casper";
-		return (CHAR8 *)"/casper/vmlinuz";
-	} else {
-		return (CHAR8 *)"";
-	}
-}
-
-static CHAR8* InitRDLocationForDistributionName(CHAR8 *name) {
-	if (strcmpa((CHAR8 *)"Debian", name) == 0) {
-		return (CHAR8 *)"/live/initrd.img";
-	} else if (strcmpa((CHAR8 *)"Ubuntu", name) == 0 || strcmpa((CHAR8 *)"Mint", name) == 0) {
-		return (CHAR8 *)"/casper/initrd.lz";
-	} else {
-		return (CHAR8 *)"";
-	}
 }
 
 static EFI_STATUS console_text_mode(VOID) {

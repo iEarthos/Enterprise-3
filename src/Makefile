@@ -17,7 +17,7 @@
  #
 ARCH            = $(shell uname -m | sed s,i[3456789]86,ia32,)
 
-OBJS            = main.o menu.o utils.o
+OBJS            = main.o menu.o utils.o distribution.o
 TARGET          = enterprise.efi
 
 EFIINC          = /usr/local/include/efi
