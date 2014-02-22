@@ -45,3 +45,7 @@ Assuming that your code is in compliance with these rules, I usually will accept
 ### FINAL THOUGHTS ###
 
 That's about it, I think. Hope this helps someone.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SevenBits/enterprise/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
