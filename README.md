@@ -1,6 +1,7 @@
 Enterprise
 ==========
 [![Build Status](https://travis-ci.org/SevenBits/Enterprise.png)](https://travis-ci.org/SevenBits/Enterprise)
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SevenBits/enterprise/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
 This source code archive contains code for Enterprise, a custom UEFI bootloader designed to load Linux distributions directly from ISO files on Apple Mac computers (even those without UEFI booting support). It is designed to compliment [Mac Linux USB Loader](https://github.com/SevenBits/Mac-Linux-USB-Loader), though it can also be used separately (albeit with some setup work). The purpose of Enterprise is as the first stage in a two-stage booting process for Mac Linux USB Loader-created USB drives. Essentially, Enterprise loads GRUB, giving it configuration settings and the location of necessary files inside of the ISO, and then the distribution is booted.
 
@@ -45,7 +46,3 @@ Assuming that your code is in compliance with these rules, I usually will accept
 ### FINAL THOUGHTS ###
 
 That's about it, I think. Hope this helps someone.
-
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/SevenBits/enterprise/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
-
